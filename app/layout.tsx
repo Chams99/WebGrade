@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   title: "WebGrade - Website Performance Analysis",
   description:
     "Analyze your website's performance, accessibility, SEO, and security with comprehensive reports powered by Google Lighthouse.",
+  icons: {
+    icon: "/placeholder-logo.svg",
+    apple: "/placeholder-logo.png",
+  },
 }
 
 export default function RootLayout({
