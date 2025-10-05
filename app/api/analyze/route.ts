@@ -36,12 +36,13 @@ export async function POST(request: NextRequest) {
 
 async function analyzeWebsite(url: string) {
   try {
-    // Run mobile, desktop, and SSL checks in parallel
-    const [mobileResults, desktopResults, sslResults] = await Promise.all([
-      runLighthouseCheck(url, 'mobile'), 
-      runLighthouseCheck(url, 'desktop'),
-      runSSLCheck(url)
-    ])
+    // Run SSL check first, then mobile and desktop with delay to avoid rate limiting
+    const sslResults = await runSSLCheck(url)
+    
+    // Add delay between requests to avoid rate limiting
+    const mobileResults = await runLighthouseCheck(url, 'mobile')
+    await new Promise(resolve => setTimeout(resolve, 2000)) // 2 second delay
+    const desktopResults = await runLighthouseCheck(url, 'desktop')
 
     // Return complete results with both mobile and desktop
     return {
@@ -151,68 +152,91 @@ async function analyzeWebsite(url: string) {
   }
 }
 
-async function runLighthouseCheck(url: string, strategy: 'mobile' | 'desktop' = 'mobile') {
-  // Call external Lighthouse API (Google PageSpeed Insights API)
-  const apiKey = process.env.PAGESPEED_API_KEY || ""
-  const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(
-    url,
-  )}&category=performance&category=accessibility&category=best-practices&category=seo&strategy=${strategy}${
-    apiKey ? `&key=${apiKey}` : ""
-  }`
+async function runLighthouseCheck(url: string, strategy: 'mobile' | 'desktop' = 'mobile', retryCount = 0): Promise<any> {
+  const maxRetries = 3
+  const retryDelay = 5000 // 5 seconds
 
-  const response = await fetch(apiUrl)
+  try {
+    // Call external Lighthouse API (Google PageSpeed Insights API)
+    const apiKey = process.env.PAGESPEED_API_KEY || ""
+    const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(
+      url,
+    )}&category=performance&category=accessibility&category=best-practices&category=seo&strategy=${strategy}${
+      apiKey ? `&key=${apiKey}` : ""
+    }`
 
-  if (!response.ok) {
-    throw new Error(`Lighthouse API error: ${response.statusText}`)
-  }
+    const response = await fetch(apiUrl)
 
-  const data = await response.json()
-  const { lighthouseResult } = data
+    if (!response.ok) {
+      if (response.status === 429) {
+        if (retryCount < maxRetries) {
+          console.log(`Rate limit hit, retrying in ${retryDelay/1000} seconds... (attempt ${retryCount + 1}/${maxRetries})`)
+          await new Promise(resolve => setTimeout(resolve, retryDelay))
+          return runLighthouseCheck(url, strategy, retryCount + 1)
+        }
+        throw new Error(`Rate limit exceeded. Please try again in a few minutes.`)
+      } else if (response.status === 403) {
+        throw new Error(`API quota exceeded. Please try again later.`)
+      } else {
+        throw new Error(`Lighthouse API error: ${response.statusText}`)
+      }
+    }
 
-  // Extract scores (0-100)
-  const categories = lighthouseResult.categories
-  const performance = Math.round((categories.performance?.score || 0) * 100)
-  const accessibility = Math.round((categories.accessibility?.score || 0) * 100)
-  const bestPractices = Math.round((categories["best-practices"]?.score || 0) * 100)
-  const seo = Math.round((categories.seo?.score || 0) * 100)
+    const data = await response.json()
+    const { lighthouseResult } = data
 
-  // Extract metrics
-  const audits = lighthouseResult.audits
-  const metrics = {
-    fcp: audits["first-contentful-paint"]?.numericValue || 0,
-    lcp: audits["largest-contentful-paint"]?.numericValue || 0,
-    tbt: audits["total-blocking-time"]?.numericValue || 0,
-    cls: audits["cumulative-layout-shift"]?.numericValue || 0,
-    speedIndex: audits["speed-index"]?.numericValue || 0,
-  }
+    // Extract scores (0-100)
+    const categories = lighthouseResult.categories
+    const performance = Math.round((categories.performance?.score || 0) * 100)
+    const accessibility = Math.round((categories.accessibility?.score || 0) * 100)
+    const bestPractices = Math.round((categories["best-practices"]?.score || 0) * 100)
+    const seo = Math.round((categories.seo?.score || 0) * 100)
 
-  // Extract screenshots
-  const finalScreenshot = audits["final-screenshot"]?.details?.data || null
-  const screenshotThumbnails = audits["screenshot-thumbnails"]?.details?.items || []
+    // Extract metrics
+    const audits = lighthouseResult.audits
+    const metrics = {
+      fcp: audits["first-contentful-paint"]?.numericValue || 0,
+      lcp: audits["largest-contentful-paint"]?.numericValue || 0,
+      tbt: audits["total-blocking-time"]?.numericValue || 0,
+      cls: audits["cumulative-layout-shift"]?.numericValue || 0,
+      speedIndex: audits["speed-index"]?.numericValue || 0,
+    }
 
-  // Extract issues for ALL categories
-  const performanceIssues = extractIssues(lighthouseResult, "performance")
-  const accessibilityIssues = extractIssues(lighthouseResult, "accessibility")
-  const bestPracticesIssues = extractIssues(lighthouseResult, "best-practices")
-  const seoIssues = extractIssues(lighthouseResult, "seo")
+    // Extract screenshots
+    const finalScreenshot = audits["final-screenshot"]?.details?.data || null
+    const screenshotThumbnails = audits["screenshot-thumbnails"]?.details?.items || []
 
-  return {
-    performance,
-    accessibility,
-    bestPractices,
-    seo,
-    metrics,
-    performanceIssues,
-    accessibilityIssues,
-    bestPracticesIssues,
-    seoIssues,
-    pageTitle: lighthouseResult.finalUrl || url,
-    pageDescription: "",
-    loadTime: Math.round(audits["interactive"]?.numericValue || 0),
-    pageSize: Math.round((audits["total-byte-weight"]?.numericValue || 0) / 1024),
-    screenshot: finalScreenshot,
-    screenshotThumbnails: screenshotThumbnails,
-    fullReport: lighthouseResult,
+    // Extract issues for ALL categories
+    const performanceIssues = extractIssues(lighthouseResult, "performance")
+    const accessibilityIssues = extractIssues(lighthouseResult, "accessibility")
+    const bestPracticesIssues = extractIssues(lighthouseResult, "best-practices")
+    const seoIssues = extractIssues(lighthouseResult, "seo")
+
+    return {
+      performance,
+      accessibility,
+      bestPractices,
+      seo,
+      metrics,
+      performanceIssues,
+      accessibilityIssues,
+      bestPracticesIssues,
+      seoIssues,
+      pageTitle: lighthouseResult.finalUrl || url,
+      pageDescription: "",
+      loadTime: Math.round(audits["interactive"]?.numericValue || 0),
+      pageSize: Math.round((audits["total-byte-weight"]?.numericValue || 0) / 1024),
+      screenshot: finalScreenshot,
+      screenshotThumbnails: screenshotThumbnails,
+      fullReport: lighthouseResult,
+    }
+  } catch (error) {
+    if (retryCount < maxRetries && error instanceof Error && error.message.includes('Rate limit')) {
+      console.log(`API error, retrying in ${retryDelay/1000} seconds... (attempt ${retryCount + 1}/${maxRetries})`)
+      await new Promise(resolve => setTimeout(resolve, retryDelay))
+      return runLighthouseCheck(url, strategy, retryCount + 1)
+    }
+    throw error
   }
 }
 
