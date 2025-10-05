@@ -257,31 +257,32 @@ export default function ResultsPage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border sticky top-0 bg-background/95 backdrop-blur z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-4">
             <Link href="/">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
+              <Button variant="ghost" size="sm" className="h-8 sm:h-9">
+                <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Back</span>
               </Button>
             </Link>
             <div className="flex items-center gap-2">
-              <Gauge className="h-6 w-6 text-primary" />
-              <span className="text-xl font-semibold">WebGrade</span>
+              <Gauge className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              <span className="text-lg sm:text-xl font-semibold">WebGrade</span>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={handleExportPDF}>
-            <Download className="h-4 w-4 mr-2" />
-            Export PDF
+          <Button variant="outline" size="sm" onClick={handleExportPDF} className="h-8 sm:h-9">
+            <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Export PDF</span>
+            <span className="sm:hidden">PDF</span>
           </Button>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
         {/* URL and Metadata */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 break-all">{scan.url}</h1>
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-lg sm:text-2xl md:text-3xl font-bold mb-2 break-all">{scan.url}</h1>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
               <span>{new Date(scan.created_at).toLocaleString()}</span>
@@ -302,30 +303,32 @@ export default function ResultsPage() {
 
         {/* Device Switcher */}
         {hasDualDevice && (
-          <Card className="p-4 mb-8 bg-card border-border">
-            <div className="flex items-center justify-between">
+          <Card className="p-3 sm:p-4 mb-6 sm:mb-8 bg-card border-border">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-2">
-                <Monitor className="h-5 w-5 text-muted-foreground" />
-                <span className="text-sm font-semibold">Device View:</span>
+                <Monitor className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+                <span className="text-xs sm:text-sm font-semibold">Device View:</span>
               </div>
               <div className="flex gap-2">
                 <Button
                   variant={deviceView === 'mobile' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setDeviceView('mobile')}
-                  className="gap-2"
+                  className="gap-1 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9"
                 >
-                  <Smartphone className="h-4 w-4" />
-                  Mobile
+                  <Smartphone className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Mobile</span>
+                  <span className="sm:hidden">M</span>
                 </Button>
                 <Button
                   variant={deviceView === 'desktop' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setDeviceView('desktop')}
-                  className="gap-2"
+                  className="gap-1 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9"
                 >
-                  <Monitor className="h-4 w-4" />
-                  Desktop
+                  <Monitor className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Desktop</span>
+                  <span className="sm:hidden">D</span>
                 </Button>
               </div>
             </div>
@@ -348,14 +351,14 @@ export default function ResultsPage() {
         )}
 
         {/* Screenshot and Load Time Section */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
+        <div className="grid lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Screenshot Preview */}
           {scan.screenshot && (
-            <Card className="p-6 bg-card border-border">
-              <div className="flex items-center gap-2 mb-4">
-                <ImageIcon className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-semibold">Site Preview</h3>
-                <Badge variant="outline" className="ml-auto">
+            <Card className="p-4 sm:p-6 bg-card border-border">
+              <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                <ImageIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <h3 className="text-base sm:text-lg font-semibold">Site Preview</h3>
+                <Badge variant="outline" className="ml-auto text-xs">
                   {deviceView === 'mobile' ? (
                     <>
                       <Smartphone className="h-3 w-3 mr-1" />
@@ -373,33 +376,33 @@ export default function ResultsPage() {
                 <img
                   src={scan.screenshot}
                   alt={`Screenshot of ${scan.url}`}
-                  className="w-full h-auto max-h-[400px] object-contain"
+                  className="w-full h-auto max-h-[200px] sm:max-h-[300px] md:max-h-[400px] object-contain"
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-3">
+              <p className="text-xs text-muted-foreground mt-2 sm:mt-3">
                 Screenshot captured during analysis
               </p>
             </Card>
           )}
 
           {/* Load Time Display */}
-          <Card className="p-6 bg-card border-border">
-            <div className="flex items-center gap-2 mb-4">
-              <Timer className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold">Load Time Performance</h3>
+          <Card className="p-4 sm:p-6 bg-card border-border">
+            <div className="flex items-center gap-2 mb-3 sm:mb-4">
+              <Timer className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              <h3 className="text-base sm:text-lg font-semibold">Load Time Performance</h3>
             </div>
             
             {/* Main Load Time */}
-            <div className="mb-6">
-              <div className="text-sm text-muted-foreground mb-2">Total Interactive Time</div>
-              <div className="flex items-end gap-2">
-                <div className={`text-6xl font-bold ${
+            <div className="mb-4 sm:mb-6">
+              <div className="text-xs sm:text-sm text-muted-foreground mb-2">Total Interactive Time</div>
+              <div className="flex items-end gap-1 sm:gap-2">
+                <div className={`text-3xl sm:text-4xl md:text-6xl font-bold ${
                   scan.load_time_ms < 3000 ? 'text-green-600' :
                   scan.load_time_ms < 5000 ? 'text-yellow-600' : 'text-red-600'
                 }`}>
                   {(scan.load_time_ms / 1000).toFixed(2)}
                 </div>
-                <div className="text-2xl text-muted-foreground mb-2">seconds</div>
+                <div className="text-sm sm:text-xl md:text-2xl text-muted-foreground mb-1 sm:mb-2">seconds</div>
               </div>
               <div className="mt-2">
                 {scan.load_time_ms < 3000 ? (
@@ -422,14 +425,14 @@ export default function ResultsPage() {
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 pt-3 sm:pt-4 border-t border-border">
               <div>
                 <div className="text-xs text-muted-foreground mb-1">First Paint</div>
-                <div className="text-lg font-bold">{formatTime(details.first_contentful_paint)}</div>
+                <div className="text-sm sm:text-lg font-bold">{formatTime(details.first_contentful_paint)}</div>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground mb-1">Page Size</div>
-                <div className="text-lg font-bold">{formatSize(scan.page_size_kb)}</div>
+                <div className="text-sm sm:text-lg font-bold">{formatSize(scan.page_size_kb)}</div>
               </div>
             </div>
 
@@ -443,22 +446,22 @@ export default function ResultsPage() {
         </div>
 
         {/* Score Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="p-6 bg-card border-border">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">Performance</h3>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+          <Card className="p-4 sm:p-6 bg-card border-border">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <h3 className="text-sm sm:text-base font-semibold">Performance</h3>
               </div>
               <Badge variant="outline" className={getScoreColor(scan.performance_score)}>
                 {getScoreLabel(scan.performance_score)}
               </Badge>
             </div>
-            <div className="flex items-end gap-3">
-              <div className={`text-5xl font-bold ${getScoreColor(scan.performance_score)}`}>
+            <div className="flex items-end gap-2 sm:gap-3">
+              <div className={`text-2xl sm:text-3xl md:text-5xl font-bold ${getScoreColor(scan.performance_score)}`}>
                 {scan.performance_score}
               </div>
-              <div className="text-muted-foreground mb-2">/100</div>
+              <div className="text-xs sm:text-sm text-muted-foreground mb-1 sm:mb-2">/100</div>
               {comparisonData && (() => {
                 const diff = getScoreDiff(scan.performance_score, comparisonData.scan.performance_score)
                 if (diff) {
@@ -471,14 +474,14 @@ export default function ResultsPage() {
                 }
               })()}
             </div>
-            <Progress value={scan.performance_score} className="mt-4" />
+            <Progress value={scan.performance_score} className="mt-3 sm:mt-4" />
           </Card>
 
-          <Card className="p-6 bg-card border-border">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">Accessibility</h3>
+          <Card className="p-4 sm:p-6 bg-card border-border">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <h3 className="text-sm sm:text-base font-semibold">Accessibility</h3>
               </div>
               <Badge variant="outline" className={getScoreColor(scan.accessibility_score)}>
                 {getScoreLabel(scan.accessibility_score)}
@@ -501,14 +504,14 @@ export default function ResultsPage() {
                 }
               })()}
             </div>
-            <Progress value={scan.accessibility_score} className="mt-4" />
+            <Progress value={scan.accessibility_score} className="mt-3 sm:mt-4" />
           </Card>
 
-          <Card className="p-6 bg-card border-border">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Gauge className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">Best Practices</h3>
+          <Card className="p-4 sm:p-6 bg-card border-border">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Gauge className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <h3 className="text-sm sm:text-base font-semibold">Best Practices</h3>
               </div>
               <Badge variant="outline" className={getScoreColor(scan.best_practices_score)}>
                 {getScoreLabel(scan.best_practices_score)}
@@ -531,14 +534,14 @@ export default function ResultsPage() {
                 }
               })()}
             </div>
-            <Progress value={scan.best_practices_score} className="mt-4" />
+            <Progress value={scan.best_practices_score} className="mt-3 sm:mt-4" />
           </Card>
 
-          <Card className="p-6 bg-card border-border">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">SEO</h3>
+          <Card className="p-4 sm:p-6 bg-card border-border">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <h3 className="text-sm sm:text-base font-semibold">SEO</h3>
               </div>
               <Badge variant="outline" className={getScoreColor(scan.seo_score)}>
                 {getScoreLabel(scan.seo_score)}
@@ -559,7 +562,7 @@ export default function ResultsPage() {
                 }
               })()}
             </div>
-            <Progress value={scan.seo_score} className="mt-4" />
+            <Progress value={scan.seo_score} className="mt-3 sm:mt-4" />
           </Card>
         </div>
 
@@ -757,9 +760,9 @@ export default function ResultsPage() {
             </TabsList>
 
             <TabsContent value="overview" className="mt-6">
-              <Card className="p-6 bg-card border-border">
-                <h3 className="text-xl font-bold mb-4">Quick Summary</h3>
-                <div className="grid md:grid-cols-2 gap-6">
+              <Card className="p-4 sm:p-6 bg-card border-border">
+                <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Quick Summary</h3>
+                <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <h4 className="font-semibold mb-3 flex items-center gap-2">
                       <Target className="h-4 w-4 text-primary" />
@@ -869,12 +872,38 @@ export default function ResultsPage() {
         </div>
 
         {/* CTA */}
-        <div className="text-center py-8">
-          <Button size="lg" onClick={() => router.push("/")}>
-            <Search className="h-5 w-5 mr-2" />
-            Analyze Another Website
+        <div className="text-center py-6 sm:py-8">
+          <Button size="lg" onClick={() => router.push("/")} className="h-10 sm:h-11">
+            <Search className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+            <span className="text-sm sm:text-base">Analyze Another Website</span>
           </Button>
         </div>
+
+        {/* Footer */}
+        <footer className="border-t border-border mt-12 sm:mt-20">
+          <div className="container mx-auto px-4 py-6 sm:py-8">
+            <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 text-center">
+              <div className="flex items-center gap-2">
+                <Gauge className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <span className="font-semibold text-sm sm:text-base">WebGrade</span>
+              </div>
+              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+                <p className="text-xs sm:text-sm text-muted-foreground">Powered by Google PageSpeed Insights</p>
+                <div className="text-xs sm:text-sm text-muted-foreground">
+                  Created by{" "}
+                  <a 
+                    href="https://chames.youssef.tn" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Dhibi chames eddine
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   )

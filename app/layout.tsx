@@ -13,6 +13,7 @@ export const metadata: Metadata = {
     icon: "/placeholder-logo.svg",
     apple: "/placeholder-logo.png",
   },
+  authors: [{ name: "Dhibi chames eddine", url: "https://chames.youssef.tn" }],
 }
 
 export default function RootLayout({
@@ -22,6 +23,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <Suspense fallback={null}>
           {children}

@@ -148,16 +148,16 @@ export function ScanHistory() {
   }
 
   return (
-    <Card className="p-6 bg-card border-border">
-      <div className="flex items-center justify-between mb-6">
+    <Card className="p-4 sm:p-6 bg-card border-border">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
         <div className="flex items-center gap-2">
-          <History className="h-5 w-5 text-primary" />
-          <h3 className="text-xl font-bold">Recent Scans</h3>
-          <Badge variant="outline">{scans.length}</Badge>
+          <History className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+          <h3 className="text-lg sm:text-xl font-bold">Recent Scans</h3>
+          <Badge variant="outline" className="text-xs">{scans.length}</Badge>
         </div>
-        <Button variant="ghost" size="sm" onClick={clearHistory}>
-          <Trash2 className="h-4 w-4 mr-2" />
-          Clear History
+        <Button variant="ghost" size="sm" onClick={clearHistory} className="self-start sm:self-auto">
+          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <span className="text-xs sm:text-sm">Clear History</span>
         </Button>
       </div>
 
@@ -174,93 +174,93 @@ export function ScanHistory() {
           return (
             <div
               key={`${scan.url}-${scan.analyzedAt}`}
-              className="flex items-center justify-between p-4 rounded-lg border bg-background hover:bg-accent/50 transition-colors"
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 rounded-lg border bg-background hover:bg-accent/50 transition-colors gap-3 sm:gap-0"
             >
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
                   <a
                     href={scan.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-medium truncate hover:underline flex items-center gap-1"
+                    className="font-medium truncate hover:underline flex items-center gap-1 text-sm sm:text-base"
                   >
                     {scan.url}
                     <ExternalLink className="h-3 w-3 flex-shrink-0" />
                   </a>
                   {isLatestForUrl && groupedByUrl.length > 1 && (
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-xs self-start">
                       Latest
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm">
                   <span className="text-muted-foreground">
                     {new Date(scan.analyzedAt).toLocaleDateString()} at{" "}
                     {new Date(scan.analyzedAt).toLocaleTimeString()}
                   </span>
                   {groupedByUrl.length > 1 && (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-xs self-start">
                       {groupedByUrl.length} scans
                     </Badge>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
                 {hasBothDevices ? (
                   // Show both mobile and desktop
-                  <div className="flex gap-6">
-                    <div>
+                  <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                    <div className="flex-1">
                       <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                         <Smartphone className="h-3 w-3" />
                         Mobile
                       </div>
-                      <div className="grid grid-cols-4 gap-3">
+                      <div className="grid grid-cols-4 gap-2 sm:gap-3">
                         <div className="text-center">
-                          <div className={`text-sm font-bold ${getScoreColor(mobileScores.performance_score)}`}>
+                          <div className={`text-xs sm:text-sm font-bold ${getScoreColor(mobileScores.performance_score)}`}>
                             {mobileScores.performance_score}
                           </div>
                         </div>
                         <div className="text-center">
-                          <div className={`text-sm font-bold ${getScoreColor(mobileScores.accessibility_score)}`}>
+                          <div className={`text-xs sm:text-sm font-bold ${getScoreColor(mobileScores.accessibility_score)}`}>
                             {mobileScores.accessibility_score}
                           </div>
                         </div>
                         <div className="text-center">
-                          <div className={`text-sm font-bold ${getScoreColor(mobileScores.best_practices_score)}`}>
+                          <div className={`text-xs sm:text-sm font-bold ${getScoreColor(mobileScores.best_practices_score)}`}>
                             {mobileScores.best_practices_score}
                           </div>
                         </div>
                         <div className="text-center">
-                          <div className={`text-sm font-bold ${getScoreColor(mobileScores.seo_score)}`}>
+                          <div className={`text-xs sm:text-sm font-bold ${getScoreColor(mobileScores.seo_score)}`}>
                             {mobileScores.seo_score}
                           </div>
                         </div>
                       </div>
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                         <Monitor className="h-3 w-3" />
                         Desktop
                       </div>
-                      <div className="grid grid-cols-4 gap-3">
+                      <div className="grid grid-cols-4 gap-2 sm:gap-3">
                         <div className="text-center">
-                          <div className={`text-sm font-bold ${getScoreColor(desktopScores.performance_score)}`}>
+                          <div className={`text-xs sm:text-sm font-bold ${getScoreColor(desktopScores.performance_score)}`}>
                             {desktopScores.performance_score}
                           </div>
                         </div>
                         <div className="text-center">
-                          <div className={`text-sm font-bold ${getScoreColor(desktopScores.accessibility_score)}`}>
+                          <div className={`text-xs sm:text-sm font-bold ${getScoreColor(desktopScores.accessibility_score)}`}>
                             {desktopScores.accessibility_score}
                           </div>
                         </div>
                         <div className="text-center">
-                          <div className={`text-sm font-bold ${getScoreColor(desktopScores.best_practices_score)}`}>
+                          <div className={`text-xs sm:text-sm font-bold ${getScoreColor(desktopScores.best_practices_score)}`}>
                             {desktopScores.best_practices_score}
                           </div>
                         </div>
                         <div className="text-center">
-                          <div className={`text-sm font-bold ${getScoreColor(desktopScores.seo_score)}`}>
+                          <div className={`text-xs sm:text-sm font-bold ${getScoreColor(desktopScores.seo_score)}`}>
                             {desktopScores.seo_score}
                           </div>
                         </div>
@@ -268,40 +268,40 @@ export function ScanHistory() {
                     </div>
                     <div className="text-center min-w-[60px]">
                       <div className="text-xs text-muted-foreground mb-1">Avg</div>
-                      <div className={`text-lg font-bold ${getScoreColor(mobileAverage)}`}>{mobileAverage}</div>
-                      <div className={`text-lg font-bold ${getScoreColor(desktopAverage)}`}>{desktopAverage}</div>
+                      <div className={`text-sm sm:text-lg font-bold ${getScoreColor(mobileAverage)}`}>{mobileAverage}</div>
+                      <div className={`text-sm sm:text-lg font-bold ${getScoreColor(desktopAverage)}`}>{desktopAverage}</div>
                     </div>
                   </div>
                 ) : (
                   // Legacy format - single device
                   <>
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-4 gap-2 sm:gap-4">
                       <div className="text-center">
                         <div className="text-xs text-muted-foreground mb-1">Perf</div>
-                        <div className={`text-lg font-bold ${getScoreColor(scan.performance_score)}`}>
+                        <div className={`text-sm sm:text-lg font-bold ${getScoreColor(scan.performance_score)}`}>
                           {scan.performance_score}
                         </div>
                       </div>
                       <div className="text-center">
                         <div className="text-xs text-muted-foreground mb-1">A11y</div>
-                        <div className={`text-lg font-bold ${getScoreColor(scan.accessibility_score)}`}>
+                        <div className={`text-sm sm:text-lg font-bold ${getScoreColor(scan.accessibility_score)}`}>
                           {scan.accessibility_score}
                         </div>
                       </div>
                       <div className="text-center">
                         <div className="text-xs text-muted-foreground mb-1">BP</div>
-                        <div className={`text-lg font-bold ${getScoreColor(scan.best_practices_score)}`}>
+                        <div className={`text-sm sm:text-lg font-bold ${getScoreColor(scan.best_practices_score)}`}>
                           {scan.best_practices_score}
                         </div>
                       </div>
                       <div className="text-center">
                         <div className="text-xs text-muted-foreground mb-1">SEO</div>
-                        <div className={`text-lg font-bold ${getScoreColor(scan.seo_score)}`}>{scan.seo_score}</div>
+                        <div className={`text-sm sm:text-lg font-bold ${getScoreColor(scan.seo_score)}`}>{scan.seo_score}</div>
                       </div>
                     </div>
                     <div className="text-center min-w-[60px]">
                       <div className="text-xs text-muted-foreground mb-1">Avg</div>
-                      <div className={`text-2xl font-bold ${getScoreColor(mobileAverage)}`}>{mobileAverage}</div>
+                      <div className={`text-lg sm:text-2xl font-bold ${getScoreColor(mobileAverage)}`}>{mobileAverage}</div>
                     </div>
                   </>
                 )}
@@ -310,9 +310,9 @@ export function ScanHistory() {
                   variant="ghost"
                   size="sm"
                   onClick={() => deleteScan(index)}
-                  className="opacity-60 hover:opacity-100"
+                  className="opacity-60 hover:opacity-100 self-start sm:self-auto h-8 w-8 sm:h-9 sm:w-auto"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </div>
             </div>
@@ -328,11 +328,11 @@ export function ScanHistory() {
         </div>
       )}
 
-      <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-        <div className="flex items-start gap-3">
-          <TrendingUp className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+      <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+        <div className="flex items-start gap-2 sm:gap-3">
+          <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-semibold mb-1 text-sm">Track Your Progress</h4>
+            <h4 className="font-semibold mb-1 text-xs sm:text-sm">Track Your Progress</h4>
             <p className="text-xs text-muted-foreground">
               Run analyses regularly to track improvements over time. Scan history is stored locally in your browser and
               limited to the last 20 scans.
