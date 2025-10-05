@@ -1,0 +1,11 @@
+# robots.txt for WebGrade
+# Allow all search engines to crawl the site
+
+User-agent: *
+Allow: /
+
+# Block API endpoints from being indexed
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://webgrade.pages.dev/sitemap.xml
