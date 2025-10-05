@@ -1,0 +1,13 @@
+name = "webgrade"
+compatibility_date = "2025-10-05"
+
+[build]
+command = "pnpm run build"
+
+# Cloudflare Pages configuration
+[env.production]
+name = "webgrade"
+
+# Ensure API routes use Edge Runtime
+[functions]
+runtime = "edge"
