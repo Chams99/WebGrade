@@ -3,7 +3,7 @@
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { History, TrendingUp, TrendingDown, Minus, ExternalLink, Trash2, Smartphone, Monitor } from "lucide-react"
+import { History, TrendingUp, TrendingDown, Minus, ExternalLink, Trash2, Smartphone, Monitor, CheckCircle2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -143,25 +143,48 @@ export function ScanHistory() {
     return "text-red-600"
   }
 
-  if (scans.length === 0) {
-    return null
-  }
-
   return (
     <Card className="p-4 sm:p-6 bg-card border-border">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
         <div className="flex items-center gap-2">
           <History className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-          <h3 className="text-lg sm:text-xl font-bold">Recent Scans</h3>
-          <Badge variant="outline" className="text-xs">{scans.length}</Badge>
+          <h3 className="text-lg sm:text-xl font-bold">Your Scan History</h3>
+          {scans.length > 0 && <Badge variant="outline" className="text-xs">{scans.length}</Badge>}
         </div>
-        <Button variant="ghost" size="sm" onClick={clearHistory} className="self-start sm:self-auto">
-          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-          <span className="text-xs sm:text-sm">Clear History</span>
-        </Button>
+        {scans.length > 0 && (
+          <Button variant="ghost" size="sm" onClick={clearHistory} className="self-start sm:self-auto">
+            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span className="text-xs sm:text-sm">Clear History</span>
+          </Button>
+        )}
       </div>
 
-      <div className="space-y-3">
+      {scans.length === 0 ? (
+        <div className="text-center py-8 sm:py-12">
+          <div className="inline-flex items-center justify-center h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-primary/10 mb-4">
+            <History className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+          </div>
+          <h4 className="text-base sm:text-lg font-semibold mb-2">No scans yet</h4>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
+            Your scan history will appear here automatically. Track improvements, compare results, and monitor your website's performance over time.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+              Saved locally in your browser
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+              Keeps last 20 scans
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+              Track progress over time
+            </span>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
         {scans.slice(0, 5).map((scan, index) => {
           const hasBothDevices = !!(scan.mobile && scan.desktop)
           const mobileScores = getDeviceScores(scan, 'mobile')
@@ -318,7 +341,8 @@ export function ScanHistory() {
             </div>
           )
         })}
-      </div>
+        </div>
+      )}
 
       {scans.length > 5 && (
         <div className="mt-4 text-center">

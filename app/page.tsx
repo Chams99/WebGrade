@@ -80,14 +80,15 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-20 md:py-32">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm mb-6">
-            <Zap className="h-4 w-4" />
-            <span className="flex items-center gap-1.5">
-              Powered by Google Lighthouse •
-              <Smartphone className="h-3.5 w-3.5" />
-              Mobile +
-              <Monitor className="h-3.5 w-3.5" />
-              Desktop
+          <div className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] sm:text-sm mb-6">
+            <Zap className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span className="flex items-center gap-0.5 sm:gap-1.5 whitespace-nowrap">
+              <span className="hidden sm:inline">Powered by Google Lighthouse • </span>
+              <span className="sm:hidden">Google Lighthouse • </span>
+              <Smartphone className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              <span>Mobile +</span>
+              <Monitor className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              <span>Desktop</span>
             </span>
           </div>
 
@@ -141,13 +142,30 @@ export default function HomePage() {
                 <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
                 Step-by-step fixes
               </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                History auto-saved
+              </span>
             </div>
           </form>
         </div>
       </section>
 
+      {/* Scan History */}
+      <section className="container mx-auto px-4 py-12 sm:py-16 bg-accent/20">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2">Track Your Progress</h2>
+            <p className="text-muted-foreground text-sm sm:text-base">
+              All your scans are automatically saved locally so you can track improvements over time
+            </p>
+          </div>
+          <ScanHistory />
+        </div>
+      </section>
+
       {/* Use Cases */}
-      <section className="container mx-auto px-4 py-12 sm:py-20 bg-accent/30">
+      <section className="container mx-auto px-4 py-12 sm:py-20 bg-accent/30 border-t border-border">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-4 px-4">Who is this for?</h2>
           <p className="text-center text-muted-foreground mb-8 sm:mb-12 text-base sm:text-lg px-4">
@@ -305,13 +323,6 @@ export default function HomePage() {
               </p>
             </Card>
           </div>
-        </div>
-      </section>
-
-      {/* Scan History */}
-      <section className="container mx-auto px-4 py-12 sm:py-20 border-t border-border">
-        <div className="max-w-6xl mx-auto">
-          <ScanHistory />
         </div>
       </section>
 

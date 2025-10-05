@@ -28,10 +28,12 @@ import {
   ArrowUpDown,
   Timer,
   Image as ImageIcon,
+  History,
 } from "lucide-react"
 import Link from "next/link"
 import { Recommendations } from "@/components/recommendations"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useToast } from "@/hooks/use-toast"
 
 interface DeviceData {
   scan: {
@@ -75,6 +77,7 @@ interface ScanData {
 
 export default function ResultsPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const [data, setData] = useState<ScanData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -158,6 +161,23 @@ export default function ResultsPage() {
         // Keep only the last 20 scans
         const updated = [newScan, ...existing].slice(0, 20)
         localStorage.setItem("scan-history", JSON.stringify(updated))
+        
+        // Show success toast
+        toast({
+          title: "✓ Scan saved to history",
+          description: (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <History className="h-4 w-4" />
+                <span>Track improvements over time on the homepage</span>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {updated.length} of 20 scans stored locally
+              </span>
+            </div>
+          ),
+          duration: 6000,
+        })
       }
     } catch (error) {
       console.error("Failed to save to history:", error)
@@ -828,12 +848,15 @@ export default function ResultsPage() {
 
                 <div className="mt-6 p-4 bg-primary/10 rounded-lg">
                   <div className="flex items-start gap-3">
-                    <Lightbulb className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <History className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="font-semibold mb-1">Pro Tip</h4>
+                      <h4 className="font-semibold mb-1 flex items-center gap-2">
+                        Pro Tip
+                        <Badge variant="outline" className="text-xs font-normal">Auto-saved</Badge>
+                      </h4>
                       <p className="text-sm text-muted-foreground">
-                        Track your progress by saving this report and running new analyses weekly. Small, consistent
-                        improvements lead to significant long-term gains in user experience and search rankings.
+                        This scan is automatically saved to your history! Run new analyses weekly to track your progress over time. 
+                        Small, consistent improvements lead to significant long-term gains in user experience and search rankings.
                       </p>
                     </div>
                   </div>
