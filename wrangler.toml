@@ -2,11 +2,10 @@ name = "webgrade"
 compatibility_date = "2025-10-05"
 
 [build]
-command = "pnpm run build"
+command = "npm install && npm run build"
 
-# Cloudflare Pages configuration
-[env.production]
-name = "webgrade"
+# Cloudflare Pages specific configuration
+pages_build_output_dir = ".vercel/output/static"
 
 # Ensure API routes use Edge Runtime
 [functions]
