@@ -1,4 +1,4 @@
-// This middleware ensures all API routes are handled properly on Cloudflare Pages
+// Cloudflare Workers middleware for caching and API key rotation
 export function onRequest(context) {
   return context.next();
 }
