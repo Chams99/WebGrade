@@ -187,11 +187,29 @@ export async function GET(request: NextRequest) {
     // Read data from localStorage
     const data = JSON.parse(localStorage.getItem('pdf-export-data') || '{}');
     
-    if (!data.scan) {
+    if (!data.scan && !data.mobile && !data.desktop) {
       document.getElementById('content').innerHTML = '<p style="text-align: center; padding: 40px; color: red;">No report data found. Please try exporting again.</p>';
     } else {
-      const scan = data.scan;
-      const details = data.details;
+      // Support both old format (data.scan) and new dual-device format (data.mobile/desktop)
+      const hasDualDevice = data.mobile && data.desktop;
+      const selectedDevice = data.selectedDevice || 'mobile';
+      
+      let scan, details;
+      
+      if (hasDualDevice) {
+        // Use selected device data
+        if (selectedDevice === 'desktop' && data.desktop) {
+          scan = data.desktop.scan;
+          details = data.desktop.details;
+        } else {
+          scan = data.mobile.scan;
+          details = data.mobile.details;
+        }
+      } else {
+        // Fallback to old format
+        scan = data.scan;
+        details = data.details;
+      }
       
       const getScoreColor = (score) => {
         if (score >= 90) return "#16a34a";
@@ -215,24 +233,111 @@ export async function GET(request: NextRequest) {
         return (kb / 1024).toFixed(2) + "MB";
       };
       
+      const getIssuePriority = (issue) => {
+        if (issue.severity && issue.severity !== 'info') {
+          return issue.severity;
+        }
+        const score = issue.score;
+        if (score === 0) return "critical";
+        if (score < 0.5) return "high";
+        if (score < 0.75) return "medium";
+        return "low";
+      };
+      
+      const getPriorityColor = (priority) => {
+        switch (priority) {
+          case "critical": return "#dc2626";
+          case "high": return "#ea580c";
+          case "medium": return "#ca8a04";
+          case "low": return "#6b7280";
+          default: return "#6b7280";
+        }
+      };
+      
+      const getPriorityLabel = (priority) => {
+        switch (priority) {
+          case "critical": return "Critical";
+          case "high": return "High Priority";
+          case "medium": return "Medium Priority";
+          case "low": return "Low Priority";
+          default: return "Low";
+        }
+      };
+      
+      const getEstimatedImpact = (issue) => {
+        const priority = getIssuePriority(issue);
+        const weight = issue.weight || 1;
+        
+        let baseImpact = 1;
+        switch (priority) {
+          case "critical": baseImpact = 15; break;
+          case "high": baseImpact = 8; break;
+          case "medium": baseImpact = 4; break;
+          case "low": baseImpact = 2; break;
+        }
+        
+        const weightMultiplier = 0.5 + (weight / 10) * 1.0;
+        return Math.round(baseImpact * weightMultiplier);
+      };
+      
       const renderIssues = (issues, title) => {
         if (!issues || issues.length === 0) return '';
+        
+        // Sort by priority and weight
+        const sortedIssues = [...issues].sort((a, b) => {
+          const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+          const aPriority = getIssuePriority(a);
+          const bPriority = getIssuePriority(b);
+          const priorityDiff = priorityOrder[aPriority] - priorityOrder[bPriority];
+          if (priorityDiff !== 0) return priorityDiff;
+          return (b.weight || 0) - (a.weight || 0);
+        });
         
         return \`
           <div class="section">
             <h2>\${title}</h2>
             <div class="issues">
-              \${issues.slice(0, 10).map(issue => \`
-                <div class="issue">
-                  <h4>\${issue.title}</h4>
-                  <p>\${issue.description}</p>
-                  \${issue.displayValue ? \`<p><strong>Value:</strong> \${issue.displayValue}</p>\` : ''}
-                </div>
-              \`).join('')}
+              \${sortedIssues.slice(0, 10).map(issue => {
+                const priority = getIssuePriority(issue);
+                const impact = getEstimatedImpact(issue);
+                const color = getPriorityColor(priority);
+                const label = getPriorityLabel(priority);
+                
+                return \`
+                  <div class="issue" style="border-left-color: \${color}">
+                    <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px;">
+                      <h4 style="flex: 1; margin: 0;">\${issue.title}</h4>
+                      <span style="background: \${color}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">
+                        \${label}
+                      </span>
+                    </div>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; font-size: 12px;">
+                      \${issue.scoreDisplayValue ? \`
+                        <span style="background: #f3f4f6; padding: 2px 8px; border-radius: 4px; color: #374151;">
+                          Score: \${issue.scoreDisplayValue}
+                        </span>
+                      \` : ''}
+                      <span style="background: #dcfce7; padding: 2px 8px; border-radius: 4px; color: #166534;">
+                        +\${impact} points
+                      </span>
+                      \${issue.weight && issue.weight > 0 ? \`
+                        <span style="color: #9ca3af;">
+                          Impact: \${(issue.weight * 10).toFixed(0)}% of category
+                        </span>
+                      \` : ''}
+                    </div>
+                    <p style="margin-bottom: 8px;">\${issue.description}</p>
+                    \${issue.displayValue ? \`<p style="font-size: 13px;"><strong>Current Value:</strong> \${issue.displayValue}</p>\` : ''}
+                  </div>
+                \`;
+              }).join('')}
             </div>
           </div>
         \`;
       };
+      
+      const deviceIcon = hasDualDevice ? (selectedDevice === 'desktop' ? '💻' : '📱') : '';
+      const deviceLabel = hasDualDevice ? (selectedDevice === 'desktop' ? 'Desktop' : 'Mobile') : '';
       
       document.getElementById('content').innerHTML = \`
         <div class="header">
@@ -243,12 +348,13 @@ export async function GET(request: NextRequest) {
               <path d="M12 2v4"/>
               <path d="M12 18v4"/>
             </svg>
-            WebGrade Report
+            WebGrade Report \${deviceIcon ? deviceIcon + ' ' + deviceLabel : ''}
           </h1>
           <div class="url">\${scan.url}</div>
           <div class="meta">
             Generated on \${new Date(scan.created_at).toLocaleString()} | 
             SSL: \${scan.ssl_valid ? "Valid" : "Invalid"}
+            \${hasDualDevice ? \` | Device: \${deviceLabel} Analysis\` : ''}
           </div>
         </div>
 
@@ -330,6 +436,7 @@ export async function GET(request: NextRequest) {
           </div>
         </div>
 
+        \${renderIssues(details.performance_issues, 'Performance Issues')}
         \${renderIssues(details.accessibility_issues, 'Accessibility Issues')}
         \${renderIssues(details.best_practices_issues, 'Best Practices Issues')}
         \${renderIssues(details.seo_issues, 'SEO Issues')}
