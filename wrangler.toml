@@ -1,5 +1,6 @@
 name = "webgrade"
 compatibility_date = "2025-10-05"
+compatibility_flags = ["nodejs_compat"]
 
 [build]
 command = "npm install && npm run build"

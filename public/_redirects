@@ -1,2 +1,2 @@
-# Handle client-side routing
-/*    /index.html   200
+# Handle client-side routing - exclude static files and API routes
+/!(_next|api|_static|favicon.ico|robots.txt|sitemap.xml)/*    /index.html   200
