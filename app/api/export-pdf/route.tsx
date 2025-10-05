@@ -53,6 +53,33 @@ export async function GET(request: NextRequest) {
       margin-top: 10px;
     }
     
+    .device-section {
+      margin-bottom: 60px;
+      padding: 30px;
+      background: #f9fafb;
+      border-radius: 12px;
+      border: 2px solid #e5e7eb;
+    }
+    
+    .device-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #d1d5db;
+    }
+    
+    .device-header h2 {
+      font-size: 24px;
+      margin: 0;
+    }
+    
+    .device-icon {
+      width: 32px;
+      height: 32px;
+    }
+    
     .scores-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -192,24 +219,21 @@ export async function GET(request: NextRequest) {
     } else {
       // Support both old format (data.scan) and new dual-device format (data.mobile/desktop)
       const hasDualDevice = data.mobile && data.desktop;
-      const selectedDevice = data.selectedDevice || 'mobile';
       
-      let scan, details;
+      const getMobileIcon = () => \`
+        <svg class="device-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+          <line x1="12" y1="18" x2="12.01" y2="18"/>
+        </svg>
+      \`;
       
-      if (hasDualDevice) {
-        // Use selected device data
-        if (selectedDevice === 'desktop' && data.desktop) {
-          scan = data.desktop.scan;
-          details = data.desktop.details;
-        } else {
-          scan = data.mobile.scan;
-          details = data.mobile.details;
-        }
-      } else {
-        // Fallback to old format
-        scan = data.scan;
-        details = data.details;
-      }
+      const getDesktopIcon = () => \`
+        <svg class="device-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+      \`;
       
       const getScoreColor = (score) => {
         if (score >= 90) return "#16a34a";
@@ -336,8 +360,122 @@ export async function GET(request: NextRequest) {
         \`;
       };
       
-      const deviceIcon = hasDualDevice ? (selectedDevice === 'desktop' ? '💻' : '📱') : '';
-      const deviceLabel = hasDualDevice ? (selectedDevice === 'desktop' ? 'Desktop' : 'Mobile') : '';
+      const renderDeviceSection = (deviceData, deviceName, deviceIcon) => {
+        const scan = deviceData.scan;
+        const details = deviceData.details;
+        
+        return \`
+          <div class="device-section">
+            <div class="device-header">
+              \${deviceIcon}
+              <h2>\${deviceName} Analysis</h2>
+            </div>
+            
+            <div class="scores-grid">
+              <div class="score-card">
+                <h3>Performance</h3>
+                <div class="score" style="color: \${getScoreColor(scan.performance_score)}">\${scan.performance_score}</div>
+                <span class="label" style="background-color: \${getScoreColor(scan.performance_score)}">
+                  \${getScoreLabel(scan.performance_score)}
+                </span>
+              </div>
+              
+              <div class="score-card">
+                <h3>Accessibility</h3>
+                <div class="score" style="color: \${getScoreColor(scan.accessibility_score)}">\${scan.accessibility_score}</div>
+                <span class="label" style="background-color: \${getScoreColor(scan.accessibility_score)}">
+                  \${getScoreLabel(scan.accessibility_score)}
+                </span>
+              </div>
+              
+              <div class="score-card">
+                <h3>Best Practices</h3>
+                <div class="score" style="color: \${getScoreColor(scan.best_practices_score)}">\${scan.best_practices_score}</div>
+                <span class="label" style="background-color: \${getScoreColor(scan.best_practices_score)}">
+                  \${getScoreLabel(scan.best_practices_score)}
+                </span>
+              </div>
+              
+              <div class="score-card">
+                <h3>SEO</h3>
+                <div class="score" style="color: \${getScoreColor(scan.seo_score)}">\${scan.seo_score}</div>
+                <span class="label" style="background-color: \${getScoreColor(scan.seo_score)}">
+                  \${getScoreLabel(scan.seo_score)}
+                </span>
+              </div>
+            </div>
+
+            <div class="section">
+              <h2>Core Web Vitals</h2>
+              <div class="vitals-grid">
+                <div class="metric">
+                  <div class="label">First Contentful Paint</div>
+                  <div class="value">\${formatTime(details.first_contentful_paint)}</div>
+                </div>
+                <div class="metric">
+                  <div class="label">Largest Contentful Paint</div>
+                  <div class="value">\${formatTime(details.largest_contentful_paint)}</div>
+                </div>
+                <div class="metric">
+                  <div class="label">Total Blocking Time</div>
+                  <div class="value">\${formatTime(details.total_blocking_time)}</div>
+                </div>
+                <div class="metric">
+                  <div class="label">Cumulative Layout Shift</div>
+                  <div class="value">\${details.cumulative_layout_shift.toFixed(3)}</div>
+                </div>
+                <div class="metric">
+                  <div class="label">Speed Index</div>
+                  <div class="value">\${formatTime(details.speed_index)}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <h2>Page Metrics</h2>
+              <div class="metrics-grid">
+                <div class="metric">
+                  <div class="label">Total Load Time</div>
+                  <div class="value">\${formatTime(scan.load_time_ms)}</div>
+                </div>
+                <div class="metric">
+                  <div class="label">Page Size</div>
+                  <div class="value">\${formatSize(scan.page_size_kb)}</div>
+                </div>
+                <div class="metric">
+                  <div class="label">SSL Certificate</div>
+                  <div class="value">\${scan.ssl_valid ? "✓ Valid" : "✗ Invalid"}</div>
+                </div>
+              </div>
+            </div>
+
+            \${renderIssues(details.performance_issues, 'Performance Issues')}
+            \${renderIssues(details.accessibility_issues, 'Accessibility Issues')}
+            \${renderIssues(details.best_practices_issues, 'Best Practices Issues')}
+            \${renderIssues(details.seo_issues, 'SEO Issues')}
+          </div>
+        \`;
+      };
+      
+      // Determine what to render
+      let mainContent;
+      
+      if (hasDualDevice) {
+        // Render both mobile and desktop sections
+        mainContent = \`
+          \${renderDeviceSection(data.mobile, 'Mobile', getMobileIcon())}
+          \${renderDeviceSection(data.desktop, 'Desktop', getDesktopIcon())}
+        \`;
+      } else {
+        // Legacy single device format
+        const scan = data.scan;
+        const details = data.details;
+        mainContent = renderDeviceSection({ scan, details }, 'Website', '');
+      }
+      
+      const reportUrl = hasDualDevice ? data.mobile.scan.url : (data.scan?.url || 'N/A');
+      const reportDate = hasDualDevice ? data.mobile.scan.created_at : (data.scan?.created_at || new Date().toISOString());
+      const sslValid = hasDualDevice ? data.mobile.scan.ssl_valid : (data.scan?.ssl_valid || false);
       
       document.getElementById('content').innerHTML = \`
         <div class="header">
@@ -348,98 +486,17 @@ export async function GET(request: NextRequest) {
               <path d="M12 2v4"/>
               <path d="M12 18v4"/>
             </svg>
-            WebGrade Report \${deviceIcon ? deviceIcon + ' ' + deviceLabel : ''}
+            WebGrade Report
           </h1>
-          <div class="url">\${scan.url}</div>
+          <div class="url">\${reportUrl}</div>
           <div class="meta">
-            Generated on \${new Date(scan.created_at).toLocaleString()} | 
-            SSL: \${scan.ssl_valid ? "Valid" : "Invalid"}
-            \${hasDualDevice ? \` | Device: \${deviceLabel} Analysis\` : ''}
+            Generated on \${new Date(reportDate).toLocaleString()} | 
+            SSL: \${sslValid ? "Valid" : "Invalid"}
+            \${hasDualDevice ? ' | Includes Mobile & Desktop Analysis' : ''}
           </div>
         </div>
 
-        <div class="scores-grid">
-          <div class="score-card">
-            <h3>Performance</h3>
-            <div class="score" style="color: \${getScoreColor(scan.performance_score)}">\${scan.performance_score}</div>
-            <span class="label" style="background-color: \${getScoreColor(scan.performance_score)}">
-              \${getScoreLabel(scan.performance_score)}
-            </span>
-          </div>
-          
-          <div class="score-card">
-            <h3>Accessibility</h3>
-            <div class="score" style="color: \${getScoreColor(scan.accessibility_score)}">\${scan.accessibility_score}</div>
-            <span class="label" style="background-color: \${getScoreColor(scan.accessibility_score)}">
-              \${getScoreLabel(scan.accessibility_score)}
-            </span>
-          </div>
-          
-          <div class="score-card">
-            <h3>Best Practices</h3>
-            <div class="score" style="color: \${getScoreColor(scan.best_practices_score)}">\${scan.best_practices_score}</div>
-            <span class="label" style="background-color: \${getScoreColor(scan.best_practices_score)}">
-              \${getScoreLabel(scan.best_practices_score)}
-            </span>
-          </div>
-          
-          <div class="score-card">
-            <h3>SEO</h3>
-            <div class="score" style="color: \${getScoreColor(scan.seo_score)}">\${scan.seo_score}</div>
-            <span class="label" style="background-color: \${getScoreColor(scan.seo_score)}">
-              \${getScoreLabel(scan.seo_score)}
-            </span>
-          </div>
-        </div>
-
-        <div class="section">
-          <h2>Core Web Vitals</h2>
-          <div class="vitals-grid">
-            <div class="metric">
-              <div class="label">First Contentful Paint</div>
-              <div class="value">\${formatTime(details.first_contentful_paint)}</div>
-            </div>
-            <div class="metric">
-              <div class="label">Largest Contentful Paint</div>
-              <div class="value">\${formatTime(details.largest_contentful_paint)}</div>
-            </div>
-            <div class="metric">
-              <div class="label">Total Blocking Time</div>
-              <div class="value">\${formatTime(details.total_blocking_time)}</div>
-            </div>
-            <div class="metric">
-              <div class="label">Cumulative Layout Shift</div>
-              <div class="value">\${details.cumulative_layout_shift.toFixed(3)}</div>
-            </div>
-            <div class="metric">
-              <div class="label">Speed Index</div>
-              <div class="value">\${formatTime(details.speed_index)}</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="section">
-          <h2>Page Metrics</h2>
-          <div class="metrics-grid">
-            <div class="metric">
-              <div class="label">Total Load Time</div>
-              <div class="value">\${formatTime(scan.load_time_ms)}</div>
-            </div>
-            <div class="metric">
-              <div class="label">Page Size</div>
-              <div class="value">\${formatSize(scan.page_size_kb)}</div>
-            </div>
-            <div class="metric">
-              <div class="label">SSL Certificate</div>
-              <div class="value">\${scan.ssl_valid ? "✓ Valid" : "✗ Invalid"}</div>
-            </div>
-          </div>
-        </div>
-
-        \${renderIssues(details.performance_issues, 'Performance Issues')}
-        \${renderIssues(details.accessibility_issues, 'Accessibility Issues')}
-        \${renderIssues(details.best_practices_issues, 'Best Practices Issues')}
-        \${renderIssues(details.seo_issues, 'SEO Issues')}
+        \${mainContent}
 
         <div class="footer">
           <p>Generated by WebGrade - Powered by Google PageSpeed Insights API</p>

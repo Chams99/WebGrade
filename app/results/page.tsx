@@ -167,12 +167,8 @@ export default function ResultsPage() {
   const handleExportPDF = () => {
     if (!data) return
     
-    // Store data temporarily for PDF export, including the selected device
-    const exportData = {
-      ...data,
-      selectedDevice: deviceView // Include current device view
-    }
-    localStorage.setItem("pdf-export-data", JSON.stringify(exportData))
+    // Store full data for PDF export (both mobile and desktop if available)
+    localStorage.setItem("pdf-export-data", JSON.stringify(data))
     window.open("/api/export-pdf", "_blank")
   }
 
