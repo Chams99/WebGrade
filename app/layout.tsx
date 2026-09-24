@@ -7,9 +7,9 @@ import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "WebGrade - Website Performance Analysis",
+  title: "WebGrade — Website intelligence, without the noise",
   description:
-    "Analyze your website's performance, accessibility, SEO, and security with comprehensive reports powered by Google Lighthouse.",
+    "Measure website performance, accessibility, search, HTTP security, and agent readiness with clear evidence and actionable next steps.",
   keywords: [
     "website grader",
     "website analyzer",
@@ -21,22 +21,22 @@ export const metadata: Metadata = {
     "core web vitals",
   ],
   icons: {
-    icon: "/placeholder-logo.svg",
-    apple: "/placeholder-logo.png",
+    icon: "/webgrade-mark.svg",
+    apple: "/webgrade-mark.svg",
   },
   authors: [{ name: "Dhibi chames eddine", url: "https://chames.youssef.tn" }],
-  metadataBase: new URL("https://webgrade.pages.dev"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://webgrade.chames.tn"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://webgrade.pages.dev",
+    url: "https://webgrade.chames.tn",
     siteName: "WebGrade",
-    title: "WebGrade - Grade & Improve Any Website",
+    title: "WebGrade — See what your website is telling the world",
     description:
-      "Get a comprehensive grade for any website with actionable recommendations to improve performance, accessibility, SEO, and security.",
+      "A focused website audit for speed, access, search, security, and agent readiness.",
     images: [
       {
         url: "/placeholder-logo.png",

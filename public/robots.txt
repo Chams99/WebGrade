@@ -8,4 +8,4 @@ Allow: /
 Disallow: /api/
 
 # Sitemap location
-Sitemap: https://webgrade.pages.dev/sitemap.xml
+Sitemap: https://webgrade.chames.tn/sitemap.xml

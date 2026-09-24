@@ -1,319 +1,90 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+import { createHash, randomBytes, randomUUID } from "node:crypto"
+import { isIP } from "node:net"
+import { lookup } from "node:dns/promises"
+import { z } from "zod"
+import { createReport } from "@/lib/providers"
+import { persistReport } from "@/lib/db"
+import { getDb } from "@/lib/db"
+import { claimGuest, guestAddress, releaseGuest } from "@/lib/rate-limit"
+import { reserveProviderBudget } from "@/lib/provider-budget"
+import { getWebGradeCapabilities } from "@/lib/capabilities"
 
-// Configure route for Edge Runtime (required for Cloudflare Pages)
-export const runtime = 'edge'
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+
+const requestSchema = z.object({
+  url: z.string().trim().min(1).max(2048),
+  strategies: z.array(z.enum(["mobile", "desktop"])).min(1).max(2).default(["mobile", "desktop"]),
+  cloudflareConsent: z.boolean().default(false),
+  observatoryConsent: z.boolean().default(false),
+  publicProviderConsent: z.boolean().optional(),
+}).transform((body) => ({ ...body, cloudflareConsent: body.publicProviderConsent ?? body.cloudflareConsent, observatoryConsent: body.publicProviderConsent ?? body.observatoryConsent }))
+
+function isPrivateIp(address: string) {
+  const normalized = address.toLowerCase().replace(/^\[|\]$/g, "")
+  const privateIpv6 = isIP(normalized) === 6 && (normalized === "::1" || normalized === "::" || normalized.startsWith("fc") || normalized.startsWith("fd") || normalized.startsWith("fe80") || normalized.startsWith("::ffff:127.") || normalized.startsWith("::ffff:10.") || normalized.startsWith("::ffff:192.168.") || normalized.startsWith("::ffff:172."))
+  return privateIpv6 || /^127\./.test(normalized) || /^10\./.test(normalized) || /^192\.168\./.test(normalized) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(normalized) || normalized === "0.0.0.0"
+}
+
+function hashCapability(value: string) {
+  return createHash("sha256").update(value).digest("hex")
+}
+
+async function validateTarget(raw: string) {
+  let target: URL
+  try { target = new URL(raw) } catch { return { error: "Enter a complete public URL, such as https://example.com." } }
+  if (!["http:", "https:"].includes(target.protocol)) return { error: "Only HTTP and HTTPS URLs are supported." }
+  if (target.username || target.password) return { error: "URLs with embedded credentials are not accepted." }
+  if (target.port && !["80", "443"].includes(target.port)) return { error: "Only standard HTTP and HTTPS ports are supported." }
+  const hostname = target.hostname.toLowerCase()
+  const normalizedIp = hostname.replace(/^\[|\]$/g, "")
+  const privateIpv6 = isIP(normalizedIp) === 6 && (normalizedIp === "::1" || normalizedIp === "::" || normalizedIp.toLowerCase().startsWith("fc") || normalizedIp.toLowerCase().startsWith("fd") || normalizedIp.toLowerCase().startsWith("fe80"))
+  if (hostname === "localhost" || hostname.endsWith(".localhost") || isPrivateIp(normalizedIp) || privateIpv6) return { error: "Private and local network targets are not supported." }
+  if (isIP(normalizedIp) === 0) {
+    try {
+      const addresses = await lookup(hostname, { all: true, verbatim: true })
+      if (!addresses.length || addresses.some((address) => isPrivateIp(address.address))) return { error: "Private and local network targets are not supported." }
+    } catch { return { error: "The host could not be resolved as a public website." } }
+  }
+  return { target: target.toString() }
+}
 
 export async function POST(request: NextRequest) {
+  const contentType = request.headers.get("content-type") ?? ""
+  if (!contentType.toLowerCase().includes("application/json")) return NextResponse.json({ code: "unsupported_media", error: "Send a JSON request." }, { status: 415 })
+  const length = Number(request.headers.get("content-length") ?? 0)
+  if (length > 16_000) return NextResponse.json({ code: "payload_too_large", error: "The request is too large." }, { status: 413 })
+  const address = guestAddress(request)
+  const limit = claimGuest(address)
+  if (!limit.ok) return NextResponse.json({ code: "rate_limited", error: limit.retryAfter <= 5 ? "A guest analysis is already running." : "Guest analysis limit reached. Try again later." }, { status: 429, headers: { "Retry-After": String(limit.retryAfter) } })
   try {
-    const { url } = await request.json()
-
-    if (!url) {
-      return NextResponse.json({ error: "URL is required" }, { status: 400 })
-    }
-
-    // Validate URL format
-    try {
-      new URL(url)
-    } catch {
-      return NextResponse.json({ error: "Invalid URL format" }, { status: 400 })
-    }
-
-    // Run analysis and return results directly
-    const analysisResult = await analyzeWebsite(url)
-
-    return NextResponse.json(analysisResult)
-  } catch (error) {
-    console.error("Error in analyze route:", error)
-    return NextResponse.json(
-      { 
-        error: "Failed to analyze website",
-        message: error instanceof Error ? error.message : "Unknown error"
-      }, 
-      { status: 500 }
-    )
-  }
-}
-
-async function analyzeWebsite(url: string) {
-  try {
-    // Run mobile, desktop, and SSL checks in parallel
-    const [mobileResults, desktopResults, sslResults] = await Promise.all([
-      runLighthouseCheck(url, 'mobile'), 
-      runLighthouseCheck(url, 'desktop'),
-      runSSLCheck(url)
-    ])
-
-    // Return complete results with both mobile and desktop
-    return {
-      success: true,
-      url,
-      analyzedAt: new Date().toISOString(),
-      mobile: {
-        scan: {
-          url,
-          created_at: new Date().toISOString(),
-          performance_score: mobileResults.performance,
-          accessibility_score: mobileResults.accessibility,
-          best_practices_score: mobileResults.bestPractices,
-          seo_score: mobileResults.seo,
-          ssl_valid: sslResults.valid,
-          ssl_issuer: sslResults.issuer,
-          ssl_expires_at: sslResults.expiresAt,
-          page_title: mobileResults.pageTitle,
-          page_description: mobileResults.pageDescription,
-          load_time_ms: mobileResults.loadTime,
-          page_size_kb: mobileResults.pageSize,
-          status: 'completed',
-          error_message: null,
-          screenshot: mobileResults.screenshot,
-        },
-        details: {
-          first_contentful_paint: mobileResults.metrics.fcp,
-          largest_contentful_paint: mobileResults.metrics.lcp,
-          total_blocking_time: mobileResults.metrics.tbt,
-          cumulative_layout_shift: mobileResults.metrics.cls,
-          speed_index: mobileResults.metrics.speedIndex,
-          performance_issues: mobileResults.performanceIssues,
-          accessibility_issues: mobileResults.accessibilityIssues,
-          best_practices_issues: mobileResults.bestPracticesIssues,
-          seo_issues: mobileResults.seoIssues,
-          lighthouse_report: mobileResults.fullReport,
-          screenshot_thumbnails: mobileResults.screenshotThumbnails,
-        }
-      },
-      desktop: {
-        scan: {
-          url,
-          created_at: new Date().toISOString(),
-          performance_score: desktopResults.performance,
-          accessibility_score: desktopResults.accessibility,
-          best_practices_score: desktopResults.bestPractices,
-          seo_score: desktopResults.seo,
-          ssl_valid: sslResults.valid,
-          ssl_issuer: sslResults.issuer,
-          ssl_expires_at: sslResults.expiresAt,
-          page_title: desktopResults.pageTitle,
-          page_description: desktopResults.pageDescription,
-          load_time_ms: desktopResults.loadTime,
-          page_size_kb: desktopResults.pageSize,
-          status: 'completed',
-          error_message: null,
-          screenshot: desktopResults.screenshot,
-        },
-        details: {
-          first_contentful_paint: desktopResults.metrics.fcp,
-          largest_contentful_paint: desktopResults.metrics.lcp,
-          total_blocking_time: desktopResults.metrics.tbt,
-          cumulative_layout_shift: desktopResults.metrics.cls,
-          speed_index: desktopResults.metrics.speedIndex,
-          performance_issues: desktopResults.performanceIssues,
-          accessibility_issues: desktopResults.accessibilityIssues,
-          best_practices_issues: desktopResults.bestPracticesIssues,
-          seo_issues: desktopResults.seoIssues,
-          lighthouse_report: desktopResults.fullReport,
-          screenshot_thumbnails: desktopResults.screenshotThumbnails,
-        }
-      },
-      // Keep backward compatibility - default to mobile
-      scan: {
-        url,
-        created_at: new Date().toISOString(),
-        performance_score: mobileResults.performance,
-        accessibility_score: mobileResults.accessibility,
-        best_practices_score: mobileResults.bestPractices,
-        seo_score: mobileResults.seo,
-        ssl_valid: sslResults.valid,
-        ssl_issuer: sslResults.issuer,
-        ssl_expires_at: sslResults.expiresAt,
-        page_title: mobileResults.pageTitle,
-        page_description: mobileResults.pageDescription,
-        load_time_ms: mobileResults.loadTime,
-        page_size_kb: mobileResults.pageSize,
-        status: 'completed',
-        error_message: null,
-      },
-      details: {
-        first_contentful_paint: mobileResults.metrics.fcp,
-        largest_contentful_paint: mobileResults.metrics.lcp,
-        total_blocking_time: mobileResults.metrics.tbt,
-        cumulative_layout_shift: mobileResults.metrics.cls,
-        speed_index: mobileResults.metrics.speedIndex,
-        performance_issues: mobileResults.performanceIssues,
-        accessibility_issues: mobileResults.accessibilityIssues,
-        best_practices_issues: mobileResults.bestPracticesIssues,
-        seo_issues: mobileResults.seoIssues,
-        lighthouse_report: mobileResults.fullReport,
-      }
-    }
-  } catch (error) {
-    console.error("Error analyzing website:", error)
-    throw error
-  }
-}
-
-async function runLighthouseCheck(url: string, strategy: 'mobile' | 'desktop' = 'mobile') {
-  // Call external Lighthouse API (Google PageSpeed Insights API)
-  const apiKey = process.env.PAGESPEED_API_KEY || ""
-  const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(
-    url,
-  )}&category=performance&category=accessibility&category=best-practices&category=seo&strategy=${strategy}${
-    apiKey ? `&key=${apiKey}` : ""
-  }`
-
-  const response = await fetch(apiUrl)
-
-  if (!response.ok) {
-    throw new Error(`Lighthouse API error: ${response.statusText}`)
-  }
-
-  const data = await response.json()
-  const { lighthouseResult } = data
-
-  // Extract scores (0-100)
-  const categories = lighthouseResult.categories
-  const performance = Math.round((categories.performance?.score || 0) * 100)
-  const accessibility = Math.round((categories.accessibility?.score || 0) * 100)
-  const bestPractices = Math.round((categories["best-practices"]?.score || 0) * 100)
-  const seo = Math.round((categories.seo?.score || 0) * 100)
-
-  // Extract metrics
-  const audits = lighthouseResult.audits
-  const metrics = {
-    fcp: audits["first-contentful-paint"]?.numericValue || 0,
-    lcp: audits["largest-contentful-paint"]?.numericValue || 0,
-    tbt: audits["total-blocking-time"]?.numericValue || 0,
-    cls: audits["cumulative-layout-shift"]?.numericValue || 0,
-    speedIndex: audits["speed-index"]?.numericValue || 0,
-  }
-
-  // Extract screenshots
-  const finalScreenshot = audits["final-screenshot"]?.details?.data || null
-  const screenshotThumbnails = audits["screenshot-thumbnails"]?.details?.items || []
-
-  // Extract issues for ALL categories
-  const performanceIssues = extractIssues(lighthouseResult, "performance")
-  const accessibilityIssues = extractIssues(lighthouseResult, "accessibility")
-  const bestPracticesIssues = extractIssues(lighthouseResult, "best-practices")
-  const seoIssues = extractIssues(lighthouseResult, "seo")
-
-  return {
-    performance,
-    accessibility,
-    bestPractices,
-    seo,
-    metrics,
-    performanceIssues,
-    accessibilityIssues,
-    bestPracticesIssues,
-    seoIssues,
-    pageTitle: lighthouseResult.finalUrl || url,
-    pageDescription: "",
-    loadTime: Math.round(audits["interactive"]?.numericValue || 0),
-    pageSize: Math.round((audits["total-byte-weight"]?.numericValue || 0) / 1024),
-    screenshot: finalScreenshot,
-    screenshotThumbnails: screenshotThumbnails,
-    fullReport: lighthouseResult,
-  }
-}
-
-function extractIssues(lighthouseResult: any, category: string) {
-  const issues: any[] = []
-  const categoryData = lighthouseResult.categories[category]
-
-  if (!categoryData || !categoryData.auditRefs) {
-    return issues
-  }
-
-  for (const auditRef of categoryData.auditRefs) {
-    const audit = lighthouseResult.audits[auditRef.id]
-
-    // Skip audits that are purely informational or diagnostics
-    if (!audit || audit.score === null) {
-      continue
-    }
-
-    // Skip diagnostic audits (informative, notApplicable, manual)
-    if (audit.scoreDisplayMode === 'notApplicable' || 
-        audit.scoreDisplayMode === 'informative' || 
-        audit.scoreDisplayMode === 'manual') {
-      continue
-    }
-
-    // Skip audits with zero weight (these don't affect the score)
-    if (!auditRef.weight || auditRef.weight === 0) {  
-      continue
-    }
-
-    // Include all audits that aren't perfect, with weight information
-    if (audit.score < 1) {
-      // Determine severity based on score
-      let severity: 'critical' | 'high' | 'medium' | 'low' | 'info' = 'info'
-      if (audit.score === 0) {
-        severity = 'critical'
-      } else if (audit.score < 0.5) {
-        severity = 'high'
-      } else if (audit.score < 0.75) {
-        severity = 'medium'
-      } else if (audit.score < 0.9) {
-        severity = 'low'
-      }
-
-      issues.push({
-        id: auditRef.id,
-        title: audit.title,
-        description: audit.description,
-        score: audit.score,
-        scoreDisplayValue: Math.round(audit.score * 100) + '%',
-        displayValue: audit.displayValue,
-        severity: severity,
-        weight: auditRef.weight || 0,
-        // Include numeric value for metrics
-        numericValue: audit.numericValue,
-        numericUnit: audit.numericUnit,
+    const body = requestSchema.parse(await request.json())
+    const target = await validateTarget(body.url)
+    if (target.error) return NextResponse.json({ code: "invalid_target", error: target.error }, { status: 400 })
+    const capabilities = getWebGradeCapabilities()
+    if (body.cloudflareConsent && !capabilities.cloudflareScan) return NextResponse.json({ code: "provider_unavailable", provider: "cloudflare", error: "Cloudflare URL Scanner is unavailable in this deployment." }, { status: 503 })
+    if (body.observatoryConsent && !capabilities.observatoryScan) return NextResponse.json({ code: "provider_unavailable", provider: "observatory", error: "Mozilla HTTP Observatory is unavailable in this deployment." }, { status: 503 })
+    const budgetOk = await reserveProviderBudget({ pagespeed: body.strategies.length, crux: 2, cloudflare: body.cloudflareConsent ? 1 : 0, observatory: body.observatoryConsent ? 1 : 0 })
+    if (!budgetOk) return NextResponse.json({ code: "provider_quota", error: "The daily provider budget is exhausted. Try again tomorrow." }, { status: 429 })
+    const db = getDb()
+    if (db) {
+      const runId = randomUUID()
+      const capability = randomBytes(24).toString("base64url")
+      await db.begin(async (transaction) => {
+        await transaction`insert into audit_runs (id, target_url, status, public_provider_consent, cloudflare_consent, observatory_consent, expires_at, read_capability_hash) values (${runId}, ${target.target!}, 'queued', ${body.cloudflareConsent || body.observatoryConsent}, ${body.cloudflareConsent}, ${body.observatoryConsent}, now() + interval '24 hours', ${hashCapability(capability)})`
+        await transaction`insert into jobs (run_id, kind, payload) values (${runId}, 'analysis', ${JSON.stringify({ runId, url: target.target, strategies: body.strategies, cloudflareConsent: body.cloudflareConsent, observatoryConsent: body.observatoryConsent })}::jsonb)`
       })
+      return NextResponse.json({ success: true, accepted: true, status: "queued", runId, capability }, { status: 202, headers: { "Cache-Control": "no-store" } })
     }
-  }
-
-  // Sort by severity (critical first) then by weight (more important audits first)
-  issues.sort((a, b) => {
-    const severityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 }
-    const severityDiff = (severityOrder[a.severity] || 4) - (severityOrder[b.severity] || 4)
-    if (severityDiff !== 0) return severityDiff
-    return (b.weight || 0) - (a.weight || 0)
-  })
-
-  return issues
-}
-
-async function runSSLCheck(url: string) {
-  try {
-    const urlObj = new URL(url)
-
-    // Only check SSL for HTTPS URLs
-    if (urlObj.protocol !== "https:") {
-      return {
-        valid: false,
-        issuer: null,
-        expiresAt: null,
-        error: "Not an HTTPS URL",
-      }
-    }
-
-    // Make a simple fetch to check if SSL is valid
-    const response = await fetch(url, { method: "HEAD" })
-
-    // If we get here, SSL is valid (fetch would fail on invalid SSL)
-    return {
-      valid: response.ok,
-      issuer: "Valid Certificate",
-      expiresAt: null, // We can't easily get expiry date from browser fetch
-    }
+    const report = await createReport(target.target!, body.strategies, { cloudflare: body.cloudflareConsent, observatory: body.observatoryConsent }, request.signal)
+    await persistReport(report)
+    return NextResponse.json({ success: true, accepted: true, status: "completed", runId: report.runId, report }, { status: 202, headers: { "Cache-Control": "no-store" } })
   } catch (error) {
-    return {
-      valid: false,
-      issuer: null,
-      expiresAt: null,
-      error: error instanceof Error ? error.message : "SSL check failed",
-    }
+    if (error instanceof z.ZodError) return NextResponse.json({ code: "invalid_request", error: "Check the URL, selected devices, and consent value." }, { status: 400 })
+    console.error("WebGrade analysis failed", error instanceof Error ? error.message : "unknown error")
+    return NextResponse.json({ code: "analysis_failed", error: "The analysis could not complete. You can retry without losing the target URL." }, { status: 502 })
+  } finally {
+    releaseGuest(address)
   }
 }

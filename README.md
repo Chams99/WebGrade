@@ -1,236 +1,53 @@
-# WebGrade - Website Performance Analyzer
+# WebGrade
 
-A modern, stateless website analysis tool powered by Google PageSpeed Insights API. Get comprehensive insights into your website's performance, accessibility, SEO, and security.
+WebGrade is a focused website audit tool for developers and clients. A visitor can scan a public page on mobile, desktop, or both, inspect Lighthouse evidence, view CrUX field data when it exists, and print or download a report. The owner workspace adds PostgreSQL-backed runs, same-origin batches of up to five URLs, comparable snapshots, expiring read-only share links, and the schema for scheduled monitoring and dashboard alerts.
 
-![WebGrade Screenshot](https://img.shields.io/badge/Next.js-15-black?style=flat&logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat&logo=typescript)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4-38bdf8?style=flat&logo=tailwindcss)
+The public interface is available at [webgrade.chames.tn](https://webgrade.chames.tn) when the VPS deployment is configured. The checked-in sample report is dated and never consumes provider quota.
 
-## ✨ Features
+## Provider boundaries
 
-- 🚀 **Performance Analysis** - Measure load times, Core Web Vitals, and speed metrics
-- ♿ **Accessibility Checks** - Identify WCAG compliance issues
-- 🔍 **SEO Optimization** - Get actionable SEO recommendations
-- 🔒 **Security Audits** - Check SSL certificates and security best practices
-- 📊 **Core Web Vitals** - Track FCP, LCP, TBT, CLS, and Speed Index
-- 📄 **PDF Export** - Generate professional reports
-- 🎨 **Modern UI** - Clean, responsive design with dark mode aesthetics
-- ⚡ **No Database Required** - Fully stateless, simple deployment
+- Google PageSpeed Insights supplies separate mobile and desktop Lighthouse lab audits for performance, accessibility, best practices, and SEO.
+- Google CrUX is queried by page first. If no page record exists, the result may use an explicitly labelled origin fallback. Missing field data stays unavailable.
+- Cloudflare URL Scanner Agent Readiness and Mozilla HTTP Observatory run only after an unchecked, provider-specific public-scan consent. Their public visibility and grades remain attributed to those providers.
 
-## 🏗️ Tech Stack
+WebGrade keeps provider scores separate and does not invent a combined security score, projected gains, certificate validity, compliance guarantee, or bot-readiness verdict. Intentional bot restrictions are reported as observations rather than automatic defects.
 
-- **Framework:** Next.js 15 (App Router)
-- **Language:** TypeScript
-- **Styling:** TailwindCSS 4
-- **UI Components:** Radix UI
-- **Icons:** Lucide React
-- **API:** Google PageSpeed Insights API
+## Local setup
 
-## 📋 Prerequisites
+Use Node 20 and pnpm. Copy `.env.example` to `.env.local`, then configure at least `PAGESPEED_API_KEY` for a useful PageSpeed quota. `CRUX_API_KEY` is optional. Cloudflare and Observatory require explicit consent in the UI and are skipped unless their credentials are configured.
 
-- Node.js 18+ installed
-- pnpm (recommended) or npm
-- (Optional) Google PageSpeed Insights API key
-
-## 🚀 Quick Start
-
-### 1. Clone the repository
-
-\`\`\`bash
-git clone <your-repo-url>
-cd websiteGrader
-\`\`\`
-
-### 2. Install dependencies
-
-\`\`\`bash
+```bash
 pnpm install
-# or
-npm install
-\`\`\`
-
-### 3. Set up environment variables (Optional)
-
-\`\`\`bash
-cp .env.example .env.local
-\`\`\`
-
-Edit `.env.local` and add your Google PageSpeed API key (optional but recommended for higher rate limits):
-
-\`\`\`env
-PAGESPEED_API_KEY=your_api_key_here
-\`\`\`
-
-**Getting an API Key:**
-1. Visit [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select an existing one
-3. Enable the PageSpeed Insights API
-4. Create credentials (API Key)
-5. Copy the key to your `.env.local` file
-
-**Note:** The API works without a key but has strict rate limits. An API key is recommended for production use.
-
-### 4. Run the development server
-
-\`\`\`bash
 pnpm dev
-# or
-npm run dev
-\`\`\`
+```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Production checks:
 
-## 📦 Build for Production
-
-\`\`\`bash
+```bash
+pnpm typecheck
+pnpm lint
 pnpm build
-pnpm start
-\`\`\`
+```
 
-## 🎯 How It Works
+## Owner workspace and database
 
-1. **Enter URL** - User inputs any website URL
-2. **Analysis** - App calls Google PageSpeed Insights API to run Lighthouse audits
-3. **Results** - Display comprehensive scores and metrics
-4. **Export** - Generate PDF reports for sharing
+The workspace is restricted to the GitHub account whose provider ID matches `WEBGRADE_OWNER_GITHUB_ID` (and, when set, whose email matches `WEBGRADE_OWNER_EMAIL`). Public registration and password login are disabled. Set `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and the owner identity variables before enabling owner sign-in. Provision the single owner identity after the migration with `pnpm exec tsx scripts/provision-owner.ts`. Apply the schema with:
 
-## 📊 What Gets Analyzed
+```bash
+pnpm db:migrate
+```
 
-### Performance Metrics
-- First Contentful Paint (FCP)
-- Largest Contentful Paint (LCP)
-- Total Blocking Time (TBT)
-- Cumulative Layout Shift (CLS)
-- Speed Index
-- Total load time
-- Page size
+Runs are stored as immutable report snapshots with retention timestamps. Share links store only a SHA-256 token hash, expire after at most 30 days, and can be revoked by the owner. Browser history from an earlier WebGrade build remains local and is labelled as local; it is never silently uploaded.
 
-### Quality Scores (0-100)
-- Performance
-- Accessibility
-- Best Practices
-- SEO
+The database-backed queue reserves the configurable daily provider budgets before work starts (`WEBGRADE_DAILY_PAGESPEED`, `WEBGRADE_DAILY_CLOUDFLARE`, `WEBGRADE_DAILY_OBSERVATORY`, and `WEBGRADE_DAILY_CRUX`). Guest runs use a short-lived capability and expire after 24 hours; owner runs default to 90-day retention.
 
-### Security
-- SSL/TLS certificate validation
-- HTTPS enforcement
+## VPS deployment
 
-### Issues Detection
-- Accessibility violations
-- Best practices violations
-- SEO improvements
+The deployment uses Docker Compose behind the existing Traefik network. The web service listens internally on port 3000; PostgreSQL, migrations, and the lease-backed worker have no public ports.
 
-## 🗂️ Project Structure
+1. Copy `.env.example` to the VPS environment file and add runtime-only credentials.
+2. Run `docker compose --profile migrate run --rm migrate`.
+3. Start the tagged release with `docker compose up -d --build`.
+4. Check `/api/health`, the worker heartbeat logs, and the PostgreSQL backup before switching DNS to `webgrade.chames.tn`.
 
-\`\`\`
-websiteGrader/
-├── app/
-│   ├── api/
-│   │   ├── analyze/          # Main analysis endpoint
-│   │   └── export-pdf/       # PDF generation endpoint
-│   ├── results/              # Results display page
-│   ├── layout.tsx            # Root layout
-│   └── page.tsx              # Landing page
-├── components/
-│   ├── ui/                   # Reusable UI components
-│   └── theme-provider.tsx    # Theme configuration
-├── lib/
-│   └── utils.ts              # Utility functions
-├── public/                   # Static assets
-└── README.md
-\`\`\`
-
-## 🔧 Configuration
-
-### API Rate Limits
-
-**Without API Key:**
-- 25 queries per 100 seconds per IP
-
-**With API Key:**
-- 25,000 queries per day (default quota)
-- Can request quota increase
-
-### Customization
-
-You can customize the analysis categories by modifying the API call in `app/api/analyze/route.ts`:
-
-\`\`\`typescript
-const apiUrl = \`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=\${encodeURIComponent(url)}&category=performance&category=accessibility&category=best-practices&category=seo&strategy=mobile\`
-\`\`\`
-
-Change `strategy=mobile` to `strategy=desktop` for desktop analysis.
-
-## 🎨 Styling
-
-The app uses TailwindCSS 4 with a custom design system. Colors and themes can be customized in:
-- `app/globals.css` - CSS variables and theme colors
-- `tailwind.config.js` - Tailwind configuration
-
-## 📱 Responsive Design
-
-The interface is fully responsive and works on:
-- 📱 Mobile devices (320px+)
-- 📱 Tablets (768px+)
-- 💻 Desktops (1024px+)
-
-## 🚀 Deployment
-
-### Deploy to Vercel (Recommended)
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
-
-1. Push your code to GitHub
-2. Import project to Vercel
-3. Add `PAGESPEED_API_KEY` environment variable (optional)
-4. Deploy!
-
-### Other Platforms
-
-The app can be deployed to any platform that supports Next.js:
-- Netlify
-- Railway
-- Render
-- AWS Amplify
-- Self-hosted with Node.js
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📝 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## 🔗 Resources
-
-- [Google PageSpeed Insights API](https://developers.google.com/speed/docs/insights/v5/get-started)
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Lighthouse Scoring Guide](https://developer.chrome.com/docs/lighthouse/performance/performance-scoring/)
-- [Core Web Vitals](https://web.dev/vitals/)
-
-## 💡 Tips
-
-- **Analysis Time:** Typically takes 15-30 seconds per website
-- **Best Results:** Test on production URLs (not localhost)
-- **Mobile vs Desktop:** Mobile scores are typically lower due to network simulation
-- **Repeat Tests:** Scores may vary slightly between runs due to network conditions
-
-## 🐛 Troubleshooting
-
-### "Failed to analyze website"
-- Check if the URL is publicly accessible
-- Verify the website is not blocking the Lighthouse bot
-- Ensure your API key (if used) is valid
-
-### PDF Export not working
-- Make sure popups are not blocked in your browser
-- Check browser console for any errors
-
-### Rate Limit Errors
-- Add a Google PageSpeed API key to increase rate limits
-- Wait a few minutes before retrying
-
----
-
-Built with ❤️ using Next.js and Google PageSpeed Insights
+See [`deploy/README.md`](deploy/README.md) for backups, health checks, and tagged-image rollback. There is no billing, email or Telegram delivery, automatic crawler, or public account system in this release. Monitoring notifications stay in the dashboard.

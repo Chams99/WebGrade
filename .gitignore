@@ -19,10 +19,14 @@ yarn-error.log*
 # env files
 .env*
 !.env.example
+.ENV
 
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
+
+# local WebGrade reports and database artifacts
+.webgrade/
 next-env.d.ts

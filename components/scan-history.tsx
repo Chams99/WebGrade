@@ -144,15 +144,15 @@ export function ScanHistory() {
   }
 
   return (
-    <Card className="p-4 sm:p-6 bg-card border-border">
+    <Card className="p-4 sm:p-6 modern-card">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
         <div className="flex items-center gap-2">
-          <History className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-          <h3 className="text-lg sm:text-xl font-bold">Your Scan History</h3>
-          {scans.length > 0 && <Badge variant="outline" className="text-xs">{scans.length}</Badge>}
+          <History className="h-4 w-4 sm:h-5 sm:w-5 text-primary animate-pulse-glow" />
+          <h3 className="text-lg sm:text-xl font-bold gradient-text">Your Scan History</h3>
+          {scans.length > 0 && <Badge variant="outline" className="text-xs bg-primary/10 border-primary/20">{scans.length}</Badge>}
         </div>
         {scans.length > 0 && (
-          <Button variant="ghost" size="sm" onClick={clearHistory} className="self-start sm:self-auto">
+          <Button variant="ghost" size="sm" onClick={clearHistory} className="self-start sm:self-auto hover-lift">
             <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
             <span className="text-xs sm:text-sm">Clear History</span>
           </Button>
@@ -161,12 +161,12 @@ export function ScanHistory() {
 
       {scans.length === 0 ? (
         <div className="text-center py-8 sm:py-12">
-          <div className="inline-flex items-center justify-center h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-primary/10 mb-4">
+          <div className="inline-flex items-center justify-center h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 mb-4 animate-float">
             <History className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
           </div>
-          <h4 className="text-base sm:text-lg font-semibold mb-2">No scans yet</h4>
+          <h4 className="text-base sm:text-lg font-semibold mb-2 gradient-text">No scans yet</h4>
           <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
-            Your scan history will appear here automatically. Track improvements, compare results, and monitor your website's performance over time.
+            Your scan history will appear here automatically. Track improvements, compare results, and monitor your website&apos;s performance over time.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
@@ -197,7 +197,7 @@ export function ScanHistory() {
           return (
             <div
               key={`${scan.url}-${scan.analyzedAt}`}
-              className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 rounded-lg border bg-background hover:bg-accent/50 transition-colors gap-3 sm:gap-0"
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 rounded-lg glass-effect hover-lift transition-all duration-300 gap-3 sm:gap-0"
             >
               <div className="flex-1 min-w-0">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">

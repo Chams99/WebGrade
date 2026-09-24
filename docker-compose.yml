@@ -1,0 +1,81 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env.production
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - traefik
+      - webgrade_internal
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik
+      - traefik.http.routers.webgrade.rule=Host(`${WEBGRADE_HOST:-webgrade.chames.tn}`)
+      - traefik.http.routers.webgrade.entrypoints=websecure
+      - traefik.http.routers.webgrade.tls.certresolver=myresolver
+      - traefik.http.routers.webgrade.middlewares=default-chain@file
+      - traefik.http.services.webgrade.loadbalancer.server.port=3000
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    env_file: .env.production
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - webgrade_internal
+      - webgrade_egress
+    command: ["pnpm", "exec", "tsx", "scripts/worker.ts"]
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.tools
+    env_file: .env.production
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - webgrade_internal
+    command: ["pnpm", "exec", "tsx", "scripts/migrate.ts"]
+    profiles: ["migrate"]
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-webgrade}
+      POSTGRES_USER: ${POSTGRES_USER:-webgrade}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the deployment environment}
+    volumes:
+      - webgrade_postgres:/var/lib/postgresql/data
+    networks:
+      - webgrade_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  traefik:
+    external: true
+  webgrade_internal:
+    internal: true
+  webgrade_egress: {}
+
+volumes:
+  webgrade_postgres:
