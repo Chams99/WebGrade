@@ -1,0 +1,29 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env.public
+    restart: unless-stopped
+    networks:
+      - traefik
+      - webgrade_public_egress
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik
+      - traefik.http.routers.webgrade.rule=Host(`${WEBGRADE_HOST:-webgrade.chames.tn}`)
+      - traefik.http.routers.webgrade.entrypoints=websecure
+      - traefik.http.routers.webgrade.tls.certresolver=myresolver
+      - traefik.http.routers.webgrade.middlewares=default-chain@file
+      - traefik.http.services.webgrade.loadbalancer.server.port=3000
+
+networks:
+  traefik:
+    external: true
+  webgrade_public_egress: {}

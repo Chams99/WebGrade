@@ -8,4 +8,6 @@ WebGrade is designed to run as one Next.js web container, one lease-backed worke
 4. Deploy with `docker compose --env-file .env.production up -d --build web worker`.
 5. Check `https://webgrade.chames.tn/api/health`, the worker logs, and the Traefik router before sharing the URL.
 
+For a public-scanner-only release, PostgreSQL and the worker are optional. Copy `.env.public.example` to `.env.public`, leave `DATABASE_URL` unset, and run `docker compose -f docker-compose.public.yml --env-file .env.public up -d --build web`. The scanner can complete guest reports in the request and keeps the result in the visitor's browser. Owner login, durable history, monitoring, alerts, retry/cancellation, and cloud share snapshots remain unavailable until the full stack is enabled.
+
 PostgreSQL has no published host port. Keep a tagged image and a database backup before upgrades. Restore the prior image and rerun the health check when rolling back. The worker claims schedule jobs with database leases, runs the provider checks, stores immutable reports, and records score-drop alerts after two comparable runs. A restart can safely reclaim queued work after a lease expires.
