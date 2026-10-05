@@ -39,15 +39,15 @@ pnpm db:migrate
 
 Runs are stored as immutable report snapshots with retention timestamps. Share links store only a SHA-256 token hash, expire after at most 30 days, and can be revoked by the owner. Browser history from an earlier WebGrade build remains local and is labelled as local; it is never silently uploaded.
 
-The database-backed queue reserves the configurable daily provider budgets before work starts (`WEBGRADE_DAILY_PAGESPEED`, `WEBGRADE_DAILY_CLOUDFLARE`, `WEBGRADE_DAILY_OBSERVATORY`, and `WEBGRADE_DAILY_CRUX`). Guest runs use a short-lived capability and expire after 24 hours; owner runs default to 90-day retention.
+The persistent provider guard counts each outbound provider request against an application-level daily budget (`WEBGRADE_DAILY_PAGESPEED`, `WEBGRADE_DAILY_CLOUDFLARE`, `WEBGRADE_DAILY_OBSERVATORY`, and `WEBGRADE_DAILY_CRUX`). Defaults are 200, 100, 100, and 1,000 requests per UTC day. These are local safeguards, not Google's quota values. Set one provider limit to `0` to disable that provider's outbound requests. PageSpeed HTTP 429 responses open a shared one-hour cooldown by default; a valid `Retry-After` sets the cooldown duration up to 24 hours. Guest analyses are limited to three starts per address per rolling hour, with one active run at a time. Set `WEBGRADE_ANALYSIS_ENABLED=0` to stop all new analyses while leaving the site available.
 
 ## VPS deployment
 
-The deployment uses Docker Compose behind the existing Traefik network. The web service listens internally on port 3000; PostgreSQL, migrations, and the lease-backed worker have no public ports.
+The full deployment uses Docker Compose behind the existing Traefik network. The web service listens internally on port 3000; PostgreSQL, migrations, and the lease-backed worker have no public ports. Both the full and public-only Compose files persist provider budgets and cooldowns in the `webgrade_guard_state` named volume, shared by web and worker and owned by container UID 1001. This file guard is for one VPS host and one shared local volume; it does not coordinate separate hosts or unrelated volumes.
 
-1. Copy `.env.example` to the VPS environment file and add runtime-only credentials.
-2. Run `docker compose --profile migrate run --rm migrate`.
-3. Start the tagged release with `docker compose up -d --build`.
+1. Copy `.env.example` to `.env.production` on the VPS and configure runtime-only credentials.
+2. Validate Compose with `docker compose --env-file .env.production config --quiet`, then build and run the migration service with `docker compose --env-file .env.production --profile migrate build migrate` and `docker compose --env-file .env.production --profile migrate run --rm migrate`.
+3. Build and start the web and worker services with `docker compose --env-file .env.production build web worker` and `docker compose --env-file .env.production up -d web worker`.
 4. Check `/api/health`, the worker heartbeat logs, and the PostgreSQL backup before switching DNS to `webgrade.chames.tn`.
 
-See [`deploy/README.md`](deploy/README.md) for backups, health checks, and tagged-image rollback. There is no billing, email or Telegram delivery, automatic crawler, or public account system in this release. Monitoring notifications stay in the dashboard.
+See [`deploy/README.md`](deploy/README.md) for public-only deployment and recovery commands, storage checks, backups, health checks, and tagged-image rollback. A healthy `/api/health` response verifies service and guard storage, not Google's current quota or PageSpeed credentials. There is no billing, email or Telegram delivery, automatic crawler, or public account system in this release. Monitoring notifications stay in the dashboard.

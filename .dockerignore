@@ -3,5 +3,6 @@ node_modules
 .git
 .ENV
 .env*
+.webgrade/
 *.tsbuildinfo
 README.md

@@ -2,17 +2,22 @@ import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
 import { LandingNav, ScanForm } from "@/components/webgrade/home-interactions"
 import { getWebGradeCapabilities } from "@/lib/capabilities"
+import { checkGuardStorage } from "@/lib/guard-store"
 import { sampleReport } from "@/lib/report"
 
 export const dynamic = "force-dynamic"
 
-export default function HomePage() {
-  const capabilities = getWebGradeCapabilities()
+export default async function HomePage() {
+  const configuredCapabilities = getWebGradeCapabilities()
+  let guardReady = false
+  if (configuredCapabilities.analysisEnabled) {
+    try { await checkGuardStorage(); guardReady = true } catch { guardReady = false }
+  }
+  const capabilities = { ...configuredCapabilities, analysisEnabled: configuredCapabilities.analysisEnabled && guardReady }
   const sources = [
-    { name: "Google Lighthouse", scope: "lab" },
-    { name: "Chrome UX Report", scope: "field when available" },
-    ...(capabilities.cloudflareScan ? [{ name: "Cloudflare URL Scanner", scope: "optional" }] : []),
-    ...(capabilities.observatoryScan ? [{ name: "Mozilla HTTP Observatory", scope: "optional" }] : []),
+    ...(capabilities.analysisEnabled ? [{ name: "Google Lighthouse", scope: "lab" }, { name: "Chrome UX Report", scope: "field when available" }] : []),
+    ...(capabilities.analysisEnabled && capabilities.cloudflareScan ? [{ name: "Cloudflare URL Scanner", scope: "optional" }] : []),
+    ...(capabilities.analysisEnabled && capabilities.observatoryScan ? [{ name: "Mozilla HTTP Observatory", scope: "optional" }] : []),
   ]
   return <main className="landing-shell">
     <LandingNav />

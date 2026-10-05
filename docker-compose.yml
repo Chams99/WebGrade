@@ -4,7 +4,12 @@ services:
       context: .
       dockerfile: Dockerfile
     env_file: .env.production
+    user: "1001:1001"
     restart: unless-stopped
+    environment:
+      WEBGRADE_GUARD_DIR: /var/lib/webgrade/guard
+    volumes:
+      - webgrade_guard:/var/lib/webgrade/guard
     depends_on:
       db:
         condition: service_healthy
@@ -31,14 +36,18 @@ services:
       context: .
       dockerfile: Dockerfile.worker
     env_file: .env.production
+    user: "1001:1001"
     restart: unless-stopped
+    environment:
+      WEBGRADE_GUARD_DIR: /var/lib/webgrade/guard
+    volumes:
+      - webgrade_guard:/var/lib/webgrade/guard
     depends_on:
       db:
         condition: service_healthy
     networks:
       - webgrade_internal
       - webgrade_egress
-    command: ["pnpm", "exec", "tsx", "scripts/worker.ts"]
 
   migrate:
     build:
@@ -79,3 +88,5 @@ networks:
 
 volumes:
   webgrade_postgres:
+  webgrade_guard:
+    name: webgrade_guard_state

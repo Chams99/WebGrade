@@ -29,11 +29,11 @@ export default function WorkspacePage() {
   const [observatoryConsent, setObservatoryConsent] = useState(false)
   const [batchOpen, setBatchOpen] = useState(false)
   const [scheduleOpen, setScheduleOpen] = useState(false)
-  const [capabilities, setCapabilities] = useState<WebGradeCapabilities>({ cloudflareScan: false, observatoryScan: true, cloudShare: false })
+  const [capabilities, setCapabilities] = useState<WebGradeCapabilities>({ analysisEnabled: false, cloudflareScan: false, observatoryScan: true, cloudShare: false })
 
   useEffect(() => {
     try { const stored: unknown = JSON.parse(localStorage.getItem("webgrade-reports") || "[]"); setReports(Array.isArray(stored) ? stored.map((item) => safeParseReport(item)).filter((item) => item.success).map((item) => item.data) : []) } catch { setReports([]) }
-    void fetch("/api/capabilities", { cache: "no-store" }).then((response) => response.json()).then((data) => setCapabilities({ cloudflareScan: data.cloudflareScan === true, observatoryScan: data.observatoryScan !== false, cloudShare: data.cloudShare === true })).catch(() => undefined)
+    void fetch("/api/capabilities", { cache: "no-store" }).then((response) => response.json()).then((data) => setCapabilities({ analysisEnabled: data.analysisEnabled === true, cloudflareScan: data.cloudflareScan === true, observatoryScan: data.observatoryScan !== false, cloudShare: data.cloudShare === true })).catch(() => undefined)
     void fetch("/api/workspace/status").then(async (response) => {
       const data = await response.json().catch(() => ({}))
       if (!response.ok) { setOwnerState(data.code === "signed_out" ? "signed_out" : data.code === "not_owner" ? "not_owner" : "unavailable"); return }

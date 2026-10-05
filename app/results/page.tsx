@@ -44,7 +44,7 @@ export default function ResultsPage() {
   const [downloadState, setDownloadState] = useState("Download PDF")
   const [shareState, setShareState] = useState("Share")
   const [cloudShareState, setCloudShareState] = useState("Create cloud link")
-  const [capabilities, setCapabilities] = useState<WebGradeCapabilities>({ cloudflareScan: false, observatoryScan: true, cloudShare: false })
+  const [capabilities, setCapabilities] = useState<WebGradeCapabilities>({ analysisEnabled: false, cloudflareScan: false, observatoryScan: true, cloudShare: false })
   const [loadError, setLoadError] = useState("")
   const [loading, setLoading] = useState(true)
 
@@ -69,7 +69,7 @@ export default function ResultsPage() {
   }, [])
 
   useEffect(() => {
-    void fetch("/api/capabilities", { cache: "no-store" }).then((response) => response.json()).then((data) => setCapabilities({ cloudflareScan: data.cloudflareScan === true, observatoryScan: data.observatoryScan !== false, cloudShare: data.cloudShare === true })).catch(() => undefined)
+    void fetch("/api/capabilities", { cache: "no-store" }).then((response) => response.json()).then((data) => setCapabilities({ analysisEnabled: data.analysisEnabled === true, cloudflareScan: data.cloudflareScan === true, observatoryScan: data.observatoryScan !== false, cloudShare: data.cloudShare === true })).catch(() => undefined)
   }, [])
 
   useEffect(() => { if (report) localStorage.setItem("latest-scan-result", JSON.stringify(report)) }, [report])

@@ -2,8 +2,13 @@ FROM node:20-bookworm-slim AS base
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN corepack enable && pnpm install --frozen-lockfile --ignore-scripts
+RUN groupadd --system --gid 1001 nodejs \
+  && useradd --system --uid 1001 --gid nodejs nextjs \
+  && install -d -o nextjs -g nodejs -m 0700 /var/lib/webgrade/guard
 COPY tsconfig.json ./
 COPY scripts ./scripts
 COPY db ./db
 COPY lib ./lib
-CMD ["pnpm", "exec", "tsx", "scripts/worker.ts"]
+ENV WEBGRADE_GUARD_DIR=/var/lib/webgrade/guard
+USER nextjs
+CMD ["node", "./node_modules/tsx/dist/cli.mjs", "scripts/worker.ts"]

@@ -4,7 +4,12 @@ services:
       context: .
       dockerfile: Dockerfile
     env_file: .env.public
+    user: "1001:1001"
     restart: unless-stopped
+    environment:
+      WEBGRADE_GUARD_DIR: /var/lib/webgrade/guard
+    volumes:
+      - webgrade_guard:/var/lib/webgrade/guard
     networks:
       - traefik
       - webgrade_public_egress
@@ -27,3 +32,7 @@ networks:
   traefik:
     external: true
   webgrade_public_egress: {}
+
+volumes:
+  webgrade_guard:
+    name: webgrade_guard_state

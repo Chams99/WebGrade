@@ -3,7 +3,6 @@ import { z } from "zod"
 import { createReport } from "@/lib/providers"
 import { persistReport } from "@/lib/db"
 import { checkOwner, ownerResponse } from "@/lib/owner"
-import { reserveProviderBudget } from "@/lib/provider-budget"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -24,8 +23,6 @@ export async function POST(request: NextRequest) {
     if (new Set(origins).size !== 1) return NextResponse.json({ code: "different_origins", error: "Batch targets must share one origin." }, { status: 400 })
     const reports = []
     for (const url of body.urls) {
-      const budgetOk = await reserveProviderBudget({ pagespeed: 2, crux: 2, cloudflare: body.cloudflareConsent ? 1 : 0, observatory: body.observatoryConsent ? 1 : 0 })
-      if (!budgetOk) return NextResponse.json({ code: "provider_quota", error: "The daily provider budget is exhausted. Completed pages remain saved." }, { status: 429 })
       const report = await createReport(url, ["mobile", "desktop"], { cloudflare: body.cloudflareConsent, observatory: body.observatoryConsent }, request.signal)
       await persistReport(report, check.user.id)
       reports.push(report)

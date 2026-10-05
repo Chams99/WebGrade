@@ -28,6 +28,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
-# local WebGrade reports and database artifacts
+# local WebGrade reports, database artifacts, and guard state
 .webgrade/
 next-env.d.ts

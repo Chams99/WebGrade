@@ -1,7 +1,6 @@
 import postgres from "postgres"
 import { createReport } from "../lib/providers"
 import { safeParseReport } from "../lib/report"
-import { reserveProviderBudget } from "../lib/provider-budget"
 
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required for the worker")
 const sql = postgres(process.env.DATABASE_URL, { max: 4, prepare: false })
@@ -32,7 +31,6 @@ async function runScheduledJob(job: Job) {
   if (!schedule) return
   const targets = Array.isArray(schedule.targets) ? schedule.targets.filter((value): value is string => typeof value === "string").slice(0, 5) : []
   for (const url of targets) {
-    if (!await reserveProviderBudget({ pagespeed: 2, crux: 2, cloudflare: schedule.cloudflare_consent ? 1 : 0, observatory: schedule.observatory_consent ? 1 : 0 })) throw new Error("provider budget exhausted")
     const report = await createReport(url, ["mobile", "desktop"], { cloudflare: schedule.cloudflare_consent, observatory: schedule.observatory_consent })
     await sql`insert into audit_runs (id, owner_id, target_url, created_at, public_provider_consent, cloudflare_consent, observatory_consent, status, report_json) values (${report.runId}, ${schedule.owner_id}, ${report.url}, ${report.createdAt}, ${report.providerConsent.cloudflare || report.providerConsent.observatory}, ${report.providerConsent.cloudflare}, ${report.providerConsent.observatory}, 'completed', ${JSON.stringify(report)}::jsonb) on conflict (id) do nothing`
     await createRegressionAlerts(schedule.owner_id, report)
@@ -46,7 +44,6 @@ async function runAnalysisJob(job: Job) {
   if (!current[0] || current[0].status !== "queued") return
   await sql`update audit_runs set status = 'running' where id = ${payload.runId} and status = 'queued'`
   const strategies = payload.strategies?.filter((value): value is "mobile" | "desktop" => value === "mobile" || value === "desktop")
-  if (!await reserveProviderBudget({ pagespeed: strategies?.length || 2, crux: 2, cloudflare: payload.cloudflareConsent ? 1 : 0, observatory: payload.observatoryConsent ? 1 : 0 })) throw new Error("provider budget exhausted")
   const report = await createReport(payload.url, strategies?.length ? strategies : ["mobile", "desktop"], { cloudflare: Boolean(payload.cloudflareConsent), observatory: Boolean(payload.observatoryConsent) }, undefined, payload.runId)
   await sql`update audit_runs set status = 'completed', report_json = ${JSON.stringify(report)}::jsonb where id = ${payload.runId}`
 }
