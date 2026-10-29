@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
 import { LandingNav, ScanForm } from "@/components/webgrade/home-interactions"
@@ -6,6 +7,8 @@ import { checkGuardStorage } from "@/lib/guard-store"
 import { sampleReport } from "@/lib/report"
 
 export const dynamic = "force-dynamic"
+
+export const metadata: Metadata = { alternates: { canonical: "/" } }
 
 export default async function HomePage() {
   const configuredCapabilities = getWebGradeCapabilities()

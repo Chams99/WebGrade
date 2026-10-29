@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { PublicHeader } from "@/components/webgrade/public-header"
@@ -8,6 +9,8 @@ const providers = [
   ["Cloudflare URL Scanner", "Optional · where configured", "Observed discoverability, content access, policies, and protocol signals."],
   ["Mozilla HTTP Observatory", "Optional · public", "HTTP security configuration findings and an attributed grade."],
 ]
+
+export const metadata: Metadata = { alternates: { canonical: "/about" } }
 
 export default function AboutPage() {
   return <main className="public-page about-page">
@@ -21,7 +24,7 @@ export default function AboutPage() {
         <div className="editorial-rule" />
         <section className="reading-section"><p className="section-kicker">What it checks</p><div><h2>Four questions, one readable report.</h2><p>How fast does the page feel in a controlled lab? Can people use it? Can search engines understand it? What do public security and agent-readiness services observe?</p></div></section>
         <section className="reading-section"><p className="section-kicker">How to read it</p><div><h2>Scores are signals, not a verdict.</h2><p>A Lighthouse score describes a lab run. CrUX describes a field collection period and scope. Cloudflare and Observatory report their own observations. Missing data stays unavailable, and an optional provider never runs without your explicit consent.</p></div></section>
-        <section className="provider-table-section"><div className="section-heading-inline"><p className="section-kicker">Sources</p><h2>Provider map</h2></div><div className="provider-table" role="table" aria-label="WebGrade providers"><div className="provider-row provider-row-head" role="row"><span>Provider</span><span>Use</span><span>Evidence</span></div>{providers.map(([name, use, evidence]) => <div className="provider-row" role="row" key={name}><strong>{name}</strong><span className="mono">{use}</span><span>{evidence}</span></div>)}</div></section>
+        <section className="provider-table-section"><div className="section-heading-inline"><p className="section-kicker">Sources</p><h2>Provider map</h2></div><div className="provider-table" role="table" aria-label="WebGrade providers"><div className="provider-row provider-row-head" role="row"><span>Provider</span><span>Use</span><span>Evidence</span></div>{providers.map(([name, use, evidence]) => <div className="provider-row" role="row" key={name}><strong role="cell">{name}</strong><span className="mono" role="cell">{use}</span><span role="cell">{evidence}</span></div>)}</div></section>
         <div className="about-footer"><p>WebGrade is a project by <a href="https://chames.youssef.tn" target="_blank" rel="noreferrer">Chames Dhibi</a>.</p><Link className="quiet-link" href="/">Check a website <ArrowRight size={14} aria-hidden="true" /></Link></div>
       </div>
     </div>

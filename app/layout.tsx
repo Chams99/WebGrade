@@ -26,9 +26,6 @@ export const metadata: Metadata = {
   },
   authors: [{ name: "Chames Eddine Dhibi", url: "https://chames.tn" }],
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://webgrade.chames.tn"),
-  alternates: {
-    canonical: "/",
-  },
   openGraph: {
     type: "website",
     locale: "en_US",
