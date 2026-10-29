@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowLeft, ExternalLink } from "lucide-react"
 import { PublicHeader } from "@/components/webgrade/public-header"
@@ -24,6 +25,8 @@ const capabilitiesExample = `{
   "observatoryScan": true,
   "cloudShare": false
 }`
+
+export const metadata: Metadata = { alternates: { canonical: "/docs" } }
 
 export default function DocsPage() {
   return <main className="public-page docs-page">

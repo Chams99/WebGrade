@@ -22,13 +22,10 @@ export const metadata: Metadata = {
   ],
   icons: {
     icon: "/webgrade-mark.svg",
-    apple: "/webgrade-mark.svg",
+    apple: "/apple-touch-icon.png",
   },
-  authors: [{ name: "Dhibi chames eddine", url: "https://chames.youssef.tn" }],
+  authors: [{ name: "Chames Eddine Dhibi", url: "https://chames.tn" }],
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://webgrade.chames.tn"),
-  alternates: {
-    canonical: "/",
-  },
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -39,19 +36,19 @@ export const metadata: Metadata = {
       "A focused website audit for speed, access, search, security, and agent readiness.",
     images: [
       {
-        url: "/placeholder-logo.png",
+        url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "WebGrade - Website Performance Analysis",
+        alt: "The WebGrade home page, ready to check a website",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "WebGrade - Grade & Improve Any Website",
+    title: "WebGrade — See what your website is telling the world",
     description:
-      "Analyze your website's performance, accessibility, SEO, and security with comprehensive reports powered by Google Lighthouse.",
-    images: ["/placeholder-logo.png"],
+      "A focused website audit for speed, access, search, security, and agent readiness.",
+    images: ["/og-image.jpg"],
   },
   robots: {
     index: true,
@@ -73,9 +70,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <Suspense fallback={null}>
           {children}
