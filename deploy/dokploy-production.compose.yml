@@ -1,0 +1,45 @@
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    user: nextjs
+    command: ["node", "server.js"]
+    env_file:
+      - /etc/dokploy/private-runtime/websitegrader/web.runtime.env
+    environment:
+      WEBGRADE_GUARD_DIR: /var/lib/webgrade/guard
+    volumes:
+      - webgrade_guard:/var/lib/webgrade/guard
+    networks:
+      - dokploy
+      - public_egress
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.webgrade.rule=Host(`webgrade.chames.tn`)
+      - traefik.http.routers.webgrade.entrypoints=websecure
+      - traefik.http.routers.webgrade.tls=true
+      - traefik.http.routers.webgrade.tls.certresolver=letsencrypt
+      - traefik.http.routers.webgrade.middlewares=default-chain@file
+      - traefik.http.services.webgrade.loadbalancer.server.port=3000
+
+networks:
+  dokploy:
+    name: dokploy-network
+    external: true
+  public_egress:
+    name: websitegrader_webgrade_public_egress
+    external: true
+
+volumes:
+  webgrade_guard:
+    name: webgrade_guard_state
+    external: true
