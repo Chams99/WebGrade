@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
 import { LandingNav, ScanForm } from "@/components/webgrade/home-interactions"
+import { MadeBy } from "@/components/webgrade/made-by"
 import { getWebGradeCapabilities } from "@/lib/capabilities"
 import { checkGuardStorage } from "@/lib/guard-store"
 import { sampleReport } from "@/lib/report"
@@ -35,5 +36,6 @@ export default async function HomePage() {
       <div className="source-strip"><div><p className="section-kicker">Sources</p><h2>Evidence stays separate.</h2></div><div className="source-list">{sources.map((source) => <span key={source.name}>{source.name} <small>{source.scope}</small></span>)}</div></div>
       <details className="methodology-disclosure"><summary>How the evidence is collected</summary><p>Lab measurements, field measurements, and public provider observations are reported separately. Missing data remains unavailable rather than being converted into a score.</p></details>
     </section>
+    <MadeBy className="shell-container" />
   </main>
 }

@@ -4,7 +4,28 @@ import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Suspense } from "react"
 import { Toaster } from "@/components/ui/toaster"
+import { developer, developerPerson } from "@/lib/developer"
 import "./globals.css"
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "@id": "https://webgrade.chames.tn/#app",
+      name: "WebGrade",
+      url: "https://webgrade.chames.tn/",
+      description:
+        "Measure website performance, accessibility, search, HTTP security, and agent readiness with clear evidence and actionable next steps.",
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "Any",
+      browserRequirements: "Requires JavaScript",
+      inLanguage: "en",
+      creator: { "@id": developerPerson["@id"] },
+    },
+    developerPerson,
+  ],
+}
 
 export const metadata: Metadata = {
   title: "WebGrade — Website intelligence, without the noise",
@@ -24,7 +45,8 @@ export const metadata: Metadata = {
     icon: "/webgrade-mark.svg",
     apple: "/apple-touch-icon.png",
   },
-  authors: [{ name: "Chames Eddine Dhibi", url: "https://chames.tn" }],
+  authors: [{ name: developer.name, url: developer.portfolio }],
+  creator: developer.name,
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://webgrade.chames.tn"),
   openGraph: {
     type: "website",
@@ -75,6 +97,7 @@ export default function RootLayout({
           {children}
         </Suspense>
         <Toaster />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       </body>
     </html>
   )

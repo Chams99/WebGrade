@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ArrowLeft, ExternalLink } from "lucide-react"
 import { PublicHeader } from "@/components/webgrade/public-header"
 import { DocsRail } from "@/components/webgrade/docs-rail"
+import { MadeBy } from "@/components/webgrade/made-by"
 
 const requestExample = `curl -X POST https://webgrade.chames.tn/api/analyze \
   -H 'content-type: application/json' \
@@ -44,5 +45,6 @@ export default function DocsPage() {
         <div className="docs-links"><Link href="/"><ArrowLeft size={14} aria-hidden="true" />Back to scanner</Link><a href="https://developers.google.com/speed/docs/insights/v5/get-started" target="_blank" rel="noreferrer">PageSpeed documentation <ExternalLink size={14} aria-hidden="true" /></a></div>
       </div>
     </div>
+    <MadeBy className="shell-container" />
   </main>
 }
